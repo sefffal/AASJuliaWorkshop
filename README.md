@@ -1,5 +1,16 @@
 # AAS Julia Workshop
 
+Table of Contents
+
+Copy the url below into Pluto to load the workshop section.
+
+1. ...
+2. ...
+3. Astronomy packages in Julia `https://github.com/sefffal/AASJuliaWorkshop/raw/main/3-astro-packages.jl`
+
+
+
+-----
 This repository contains material prepared for the AAS 241 meeting workshop titled "introduction to Julia".
 
 
