@@ -7,6 +7,7 @@
 This repository contains material for the AAS 241 workshop "An Introduction to the Julia Programming Language"
 
 Date: **Saturday, 7 January, 9:00 am - 5:00 pm (In-person)**
+
 Note: Registration for this in-person event has already closed.
 
 
@@ -35,16 +36,16 @@ If you have a new mac with an M1 processor, make sure to select the "M-series Pr
 
 <details>
 <summary>Windows Instructions</summary>
-This [Microsoft Store](https://www.microsoft.com/store/apps/9NJNWW8PVKMN) link can also be used to install JuliaUp.
+This <a href="https://www.microsoft.com/store/apps/9NJNWW8PVKMN">Microsoft Store</a> link can also be used to install JuliaUp.
 
-We strongly recomend you use the Windows Terminal included in Windows 11 or downloadable from the [Microsoft store](https://aka.ms/terminal). Windows Terminal has improved font and math symbol rendering compared to the antiquated `cmd.exe`.
+We strongly recomend you use the Windows Terminal included in Windows 11 or downloadable from this <a href="https://aka.ms/terminal">Microsoft Store link</a>. Windows Terminal has improved font and math symbol rendering compared to the antiquated `cmd.exe`.
 </details>
 
 <details>
 <summary>Linux Instructions</summary>
 After downloading the correct version of Julia for your operating system, expand the archive (e.g. `tar -xvf julia-xyz.tar.gz`) and place the binary `julia-xyz/bin/julia` in your `PATH`.
 
-The version of Julia included in OS package managers (yum, apt, pacman, etc) frequently have bugs not seen in the offical binaries. For more information, [see here](https://julialang.org/downloads/platform/#a_brief_note_about_unofficial_binaries).
+The version of Julia included in OS package managers (yum, apt, pacman, etc) frequently have bugs not seen in the offical binaries. For more information, <a href="https://julialang.org/downloads/platform/#a_brief_note_about_unofficial_binaries">see here</a>.
 </details>
 
 <details>
@@ -62,11 +63,14 @@ To start Julia, run:
 julia --threads=auto 
 ```
 
-To start Pluto, run:
+To start Pluto, run the following from inside Julia:
 ```julia-repl
 julia> using Pluto
 julia> Pluto.run()
 ```
+
+### Note on Python
+In one section, we will demonstrate how you can use Python libraries inside Julia. You do not have to have a Python installed in advance.
 
 ## Workshop Contents
 
@@ -74,8 +78,21 @@ The material for each section is stored as a [Pluto notebook](https://plutojl.or
 
 Copy the link for a given section below and paste it into the "Open a Notebook" box in Pluto.
 
-Morning
+The morning content is a single notebook, while the afternoon is split into multiple topics.
 
+| Topic | Link | 
+|-------|------|
+| 1. Intro to Julia | https://github.com/sefffal/AASJuliaWorkshop/raw/main/1-intro-to-julia.jl |
+| 2. Using Python Libraries | |
+| 3. Using Macros | |
+| 4. Astronomy Packages | https://github.com/sefffal/AASJuliaWorkshop/raw/main/4-astro-packages.jl|
+| 5. Code Optimization | |
+| 6. Parallel Computing | |
+| 7. Creating Packages | https://github.com/sefffal/AASJuliaWorkshop/blob/raw/7-creating-packages.jl| 
+| 8. Questions and Special Topics | |
+
+
+<!--
 my sections:
 Getting started (add a little about making sure eveyrone is installed)
 elementary functions
@@ -125,3 +142,4 @@ This repository contains material prepared for the AAS 241 meeting workshop titl
   * Parallel Computing: vectorization, threads, distributed, GPU - PT
   * Astronomy packages - WT
   * Questions/special topics
+-->
