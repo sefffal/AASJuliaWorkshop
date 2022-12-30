@@ -43,9 +43,9 @@ We strongly recomend you use the Windows Terminal included in Windows 11 or down
 
 <details>
 <summary>Linux Instructions</summary>
-After downloading the correct version of Julia for your operating system, expand the archive (e.g. `tar -xvf julia-xyz.tar.gz`) and place the binary `julia-xyz/bin/julia` in your `PATH`.
+After downloading the correct version of Julia for your operating system, expand the archive (e.g. <code>tar -xvf julia-xyz.tar.gz</code>) and place the binary <code>julia-xyz/bin/julia</code> in your <code>PATH</code>.
 
-The version of Julia included in OS package managers (yum, apt, pacman, etc) frequently have bugs not seen in the offical binaries. For more information, <a href="https://julialang.org/downloads/platform/#a_brief_note_about_unofficial_binaries">see here</a>.
+The versions of Julia included in OS package managers (yum, apt, pacman, etc) frequently have bugs not seen in the offical binaries and should be avoided. For more information, <a href="https://julialang.org/downloads/platform/#a_brief_note_about_unofficial_binaries">see here</a>.
 </details>
 
 <details>
