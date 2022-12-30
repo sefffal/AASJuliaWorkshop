@@ -88,7 +88,7 @@ The morning content is a single notebook, while the afternoon is split into mult
 | 4. Astronomy Packages | https://github.com/sefffal/AASJuliaWorkshop/raw/main/4-astro-packages.jl|
 | 5. Code Optimization | |
 | 6. Parallel Computing | |
-| 7. Creating Packages | https://github.com/sefffal/AASJuliaWorkshop/blob/raw/7-creating-packages.jl| 
+| 7. Creating Packages | https://github.com/sefffal/AASJuliaWorkshop/raw/main/7-creating-packages.jl | 
 | 8. Questions and Special Topics | |
 
 
