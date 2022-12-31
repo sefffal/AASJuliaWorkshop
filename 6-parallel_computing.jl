@@ -1,16 +1,17 @@
 ### A Pluto.jl notebook ###
-# v0.19.18
+# v0.19.19
 
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 20a0e044-8d13-4d21-bbad-edce6b5cdf53
+# ╔═╡ e17b15bd-337d-4809-8b6c-2ed0f3701a9e
 using PlutoUI
 
 # ╔═╡ d8ff3dd3-e1ea-4f20-8937-8f8f995402fa
 using BenchmarkTools # bring in @btime and @benchmark macros
 
 # ╔═╡ d774d485-cfef-4373-9fed-77618ea928de
+# Load LoopVectorization
 using LoopVectorization
 
 # ╔═╡ 463eab77-8c30-4071-bf84-a1aad685c21e
@@ -18,6 +19,15 @@ using FLoops
 
 # ╔═╡ 72cd207c-7a63-4e29-a6d8-110bcf65ecdc
 using CUDA
+
+# ╔═╡ 20a0e044-8d13-4d21-bbad-edce6b5cdf53
+# ╠═╡ disabled = true
+#=╠═╡
+using PlutoUI
+  ╠═╡ =#
+
+# ╔═╡ c989d4b7-c566-49a4-84fe-28b0e8f8c963
+PlutoUI.TableOfContents()
 
 # ╔═╡ e6020e3a-77c7-11ed-2be9-e987cee1edf0
 md"""
@@ -44,8 +54,7 @@ compares how a serial instruction v.s. a vectorized instruction would be run on 
 # ╔═╡ c23fcdf1-4fd8-4859-abb3-8e08b4476046
 md"""
 !!! note
-Some lingo definitions:
-	- **CPU cycle**: Can be thought of the smallest unit of time on which a CPU behaves.
+	**CPU cycle**: Can be thought of the smallest unit of time on which a CPU behaves.
     In a single CPU cycle, the computer usually does a fetch-decode-execute step. Briefly,
     this means that you can think of the CPU doing a single simpler operation, like
     addition, multiplication, etc.
@@ -68,25 +77,33 @@ So what does Julia do? Let's start with the simple example above:
 # ╔═╡ a1f9058a-9c7f-494e-9b73-f5acc4778604
 md"""
 !!! note
-Vectorization in this setting is usually different from vectorization in Python/R. In
-python vectorization refers to placing all your variables in some vector container,
-like a numpy array, so that the resulting operation is run using a C/Fortran library.
+	Vectorization in this setting is usually different from vectorization in Python/R. In python vectorization refers to placing all your variables in some vector container, like a numpy array, so that the resulting operation is run using a C/Fortran library.
 """
 
 # ╔═╡ 441099b3-4103-4cff-9deb-3c2153d657c6
+md"""
+```julia
 function serial_add!(out, x, y)
 	for i in eachindex(x, y)
 		out[i] = x[i] + y[i]
 	end
 	return out
 end
+```
+"""
+
+# ╔═╡ 8c198d15-4367-44e8-9de0-43a468bfbac2
+
 
 # ╔═╡ cadf8a67-1c1e-4850-9723-ef92196671dd
 md"""
 !!! note
+	Note that we append the function with `!` this is a Julia convention which signals that we are mutating the arguments.
+"""
 
-Note that we append the function with `!` this is a Julia convention which signals that
-we are mutating the arguments.
+# ╔═╡ 9fede501-3324-4076-a2ff-3b464063e5c9
+md"""
+First we will allocate some variables for this tutorial
 """
 
 # ╔═╡ 7f5c5849-feef-4581-9356-8146cba48b9e
@@ -102,20 +119,35 @@ y = rand(N)
 out = zero(y)
 
 # ╔═╡ cc00d185-1b7e-40f5-8036-da4132dc0700
+md"""
+Now let's benchmark our serial add to get a baseline for our performance.
+
+```julia
 @benchmark serial_add!($out, $x,  $y)
+```
+"""
+
+# ╔═╡ 576491d9-0c0c-4740-b73a-165c61ce3fed
+
 
 # ╔═╡ 34ad1196-a1d7-4118-b4da-426af6826c7d
 md"""
 Analyzing this on a Ryzen 7950x, it appears that the summation is 53.512 ns, or each
-addition takes only 0.05ns! Inverting this number would naively suggest that the computer
-I am using has a 19 GHz processor! This is not the case, and SIMD is the reason for the
-amazing performance. Julia's compiler and LLVM were able to apply its auto-vectorization
-routines to use SIMD to accelerate the program.
+addition takes only 0.05ns! Inverting this number would naively suggest that the computer I am using has a 19 GHz processor! 
+
+SIMD is the reason for this performance. Namely Julia's was able to automatically apply its auto-vectorization routines to use SIMD to accelerate the program.
 
 To confirm that Julia was able to vectorize the loop we can use the introspection tool
 ```julia
 @code_llvm serial_all!(out, x, y)
 ```
+"""
+
+# ╔═╡ 7623b88a-ba60-450e-86fb-8890354f7a94
+
+
+# ╔═╡ a872cf65-a11e-4371-9d4d-41ea92c55369
+md"""
 This outputs the LLVM IR and represents the final step of Julia's compilation pipeline
 before it is converted into native machine code. While the output of `@code_llvm` is
 complicated to check that the compiler effectively used SIMD we can look for something
@@ -128,57 +160,85 @@ similar to
    %56 = fadd <4 x double> %wide.load, %wide.load27
 ```
 
-This means that for each addition clock, we are simultaneously adding four elements of the
-array together. As a sanity check, this means that I have a 19/4 = 4.8 GHz processor
-which is roughly in line with AMD's reported speed.
+This means that for each addition clock, we are simultaneously adding four elements of the array together. As a sanity check, this means that I have a 19/4 = 4.8 GHz processor which is roughly in line with the Ryzen 7950x reported speed.
 
 ### Vectorizing Julia Code with Packages
 
 Proving that a program can SIMD however can be difficult, and sometimes the compiler
 won't effectively auto-vectorize the code. Julia however provides a number of tools that
 can help the user to more effectively use SIMD. The most low-level of these libraries
-is [`SIMD.jl`](https://github.com/eschnett/SIMD.jl). However, SIMD.jl is a very low-level
-package that most end-users do not need to worry about (for an introduction
-see <http://kristofferc.github.io/post/intrinsics/>. Instead most Julia users will user
-more-upstream packages, such as [`LoopVectorization.jl`](https://github.com/JuliaSIMD/LoopVectorization.jl).
+is [`SIMD.jl`](https://github.com/eschnett/SIMD.jl). However,  most users never need to use SIMD.jl directly (for an introduction
+see <http://kristofferc.github.io/post/intrinsics/>. Instead most Julia users will use more-upstream packages, such as [`LoopVectorization.jl`](https://github.com/JuliaSIMD/LoopVectorization.jl).
 
-To see `LoopVectorization` in action let's change our above example to the slightly more complicated function
-"""
+To see `LoopVectorization` in action let's change our above example to the slightly more complicated function.
 
-# ╔═╡ f58b7f3a-09ba-4221-989c-6885abef6eec
+```julia
 function serial_sinadd(out, x, y)
 	for i in eachindex(out, x, y)
 		out[i] = x[i] + sin(y[i])
 	end
 	return out
 end
+```
+"""
+
+# ╔═╡ 547df3f2-b2fe-4f22-a0ac-3ba6bdd3171c
+
 
 # ╔═╡ 57bd871d-06fc-4050-9024-aaaf52297d0a
+md"""
+Again lets start with a baseline evaluation
+```julia
 @benchmark serial_sinadd($out, $x, $y)
+```
+"""
+
+# ╔═╡ f51bd7cb-97fd-4d5e-bcac-a114f19abe7d
+
 
 # ╔═╡ 566eb7e1-0e2f-4ea7-8770-a6b2c95c1eb4
 md"""
-This is a lot slower than our previous example! Analyzing the `@code_llvm` we can check
-that indeed this is because Julia/LLVM was unable to automatically SIMD the expression.
-The reason for this is complicated and won't be discussed. However, we can fix this with
-loop vectorization and its `@turbo` macro
+Running this example will show that the code is a lot slower than our previous example! Part of this is because `sin` is expensive, however we can also check whether the code was vectorized using the `@code_llvm`.
+```julia
+@code_llvm serial_sinadd(out, x, y)
+```
 """
 
-# ╔═╡ fb6f9256-e874-418a-b226-83a9173b9ec2
+# ╔═╡ e4e98981-1964-43a3-aa81-4fef27d7f864
+
+
+# ╔═╡ 7f0ff927-71ea-4ab9-99aa-c4a6655b545c
+md"""
+Analyzing the output does show that Julia/LLVM was unable to automatically vectorize the expression. The reason for this is complicated and won't be discussed. However, we can fix this with
+loop vectorization and its `@turbo` macro
+
+"""
+
+# ╔═╡ ccf102f3-9e85-4f70-b65e-6b4b056cf7e3
+md"""
+```julia
 function serial_sinadd_turbo(out, x, y)
 	@turbo for i in eachindex(out, x, y)
 		out[i] = x[i] + sin(y[i])
 	end
 	return out
 end
+```
+"""
+
+# ╔═╡ fb6f9256-e874-418a-b226-83a9173b9ec2
+
 
 # ╔═╡ 540326cd-5f2c-4b07-8dd6-1c65f63af7d6
+md"""
+```julia
 @benchmark serial_sinadd_turbo($out, $x, $y)
+```
+"""
 
 # ╔═╡ 1364924b-0cbd-443d-a319-9701708cbd15
 md"""
-And boom we get a factor of 2 speed-up even by simply applying the macro. LoopVectorization
-can be very helpful in forcing the compiler to vectorize the code.
+And boom we get large speed increase (factor of 2 on a Ryzen 7950x) by simply adding the `@turbo` macro to our loop.
 """
 
 # ╔═╡ 54d083d4-3bf8-4ed7-95b5-203e13cc3249
@@ -199,18 +259,34 @@ using the environment label `JULIA_NUM_THREADS=4`. If you use `julia -t auto` th
 start with the number of threads available on your machine. Note that `julia -t` required julia version 1.5 or later.
 
 You can check the number of threads julia is using in the repl by typing
+```julia
+Threads.nthreads()
+```
 """
 
 # ╔═╡ c6228b0b-22b8-4e3d-95d2-350987544b85
-Threads.nthreads()
+
 
 # ╔═╡ b9e13054-7641-45f1-8cd6-c8565a9f5d1f
 md"""
 Each Julia thread is tagged with an id that can be found using
+```julia
+Threads.threadid()
+```
+which defaults to 1, the master thread.
+
+
+!!! tip
+	This the number of `Julia` threads not the number of BLAS or threads. To set those do
+	```julia
+	using LinearAlgebra
+	BLAS.set_num_threads(8)
+	```
+	where 8 is the number of threads you want to use
 """
 
-# ╔═╡ a861c729-e49a-4742-bbed-0a849319745b
-Threads.threadid()
+# ╔═╡ 11f7af26-92d5-4430-bdde-5aad69859f2e
+
 
 # ╔═╡ d1bae4b3-6455-458b-a00c-f7e8eda201c3
 md"""
@@ -227,21 +303,36 @@ which automatically threads loops for you. For instance, we can thread our previ
 """
 
 # ╔═╡ e468d9fd-ead0-4ce4-92b1-cb96132f6921
+md"""
+```julia
 function threaded_add!(out, x, y)
 	Threads.@threads for i in eachindex(out, x, y)
 		out[i] = x[i] + y[i]
 	end
 	return out
 end
+```
+"""
+
+# ╔═╡ f9841e19-68ad-411e-88c6-363996b7a95c
+
 
 # ╔═╡ 478eaa1d-509a-4fba-8b65-cb45561f9157
+md"""
+And benchmarking:
+
+```julia
 @benchmark threaded_add!($out, $x, $y)
+```
+"""
+
+# ╔═╡ 14b676f0-b3b3-41a0-8f08-80b4fae29ec3
+
 
 # ╔═╡ c815af66-cb82-4dd0-a4b8-3c9cb4a8d9f2
 md"""
 This is actually slower than what we previously got without threading! This is because
-threading has overhead! For simple computations, like adding two vectors the overhead from
-threading dominates over any benefit you gain from using multiple threads.
+threading has significant overhead! For simple computations, like adding two small vectors the overhead from threading dominates over any benefit you gain from using multiple threads.
 
 In order to gain a benefit from threading our operation needs to
 	1. Be expensive enough that the threading overhead is relatively minor
@@ -260,22 +351,40 @@ ylarge = rand(2^20)
 outlarge = rand(2^20)
 
 # ╔═╡ c06da2eb-ed9f-4986-854c-9b8d830e662b
+md"""
+Get the baseline again
+```julia
 @benchmark serial_add!($outlarge, $xlarge,  $ylarge)
+```
+"""
+
+# ╔═╡ 54b2e366-f409-4603-a57a-b711202c4887
+
 
 # ╔═╡ 07eddd9c-c53f-49e7-9d61-2f5d54711a1c
+md"""
+Now test the threading example
+```julia
 @benchmark threaded_add!($outlarge, $xlarge,  $ylarge)
+```
+"""
+
+# ╔═╡ b5666e45-dcf6-4ea8-9e83-7609f2091f83
+
 
 # ╔═╡ 45639208-ec9f-4aef-adb0-7a2c4467353a
 md"""
-Therefore, we are starting to see the benefits of threading for large enough vectors.
-However, this should be a warning that threading does not automatically lead to speed
-increases. Instead, the user should benchmark code to determine whether threading will be
-helpful for the problem at hand.
+Now, we are starting to see the benefits of threading for large enough vectors.
+To determine whether threading is useful, a user should benchmark the code. Additionally, memory bandwidth limitations are often important and so multi-threaded code should also do as few allocations as possible.
 
 ### Low-Level Multi-Theading
 """
 
-# ╔═╡ 1ee1af8c-191c-4677-84fc-2cdeac39607c
+# ╔═╡ bd78505c-904c-4e65-9160-6b3ebf02c21e
+md"""
+There are additional considerations to keep in mind when multi-threading. A important one is that Julia's Base threading utilities are rather low-level and do not guarantee threading safety, e.g., to be free of **race-conditions**. To see this let's consider a simple map and sum function
+
+```julia
 function apply_sum(f, x)
 	s = zero(eltype(x))
 	for i in eachindex(x)
@@ -283,19 +392,28 @@ function apply_sum(f, x)
 	end
 	return s
 end
+```
+"""
+
+# ╔═╡ 1ee1af8c-191c-4677-84fc-2cdeac39607c
+
 
 # ╔═╡ 32068e63-5ad5-4d0d-bee6-205597db610b
+md"""
+Now apply this to our large vector
+```julia
 apply_sum(x->exp(-x), xlarge)
+```
+"""
 
-# ╔═╡ acca6a78-2c37-433f-beeb-c771e24ec2f9
-@benchmark apply_sum($(x->exp(-x)), $xlarge)
+# ╔═╡ d7ad4f01-2f7e-4dcc-8e32-88ebbf807a06
+
 
 # ╔═╡ 5c5ce94e-1411-4b26-af48-2cd836b0857c
 md"""
-A naieve threaded implementation of this would be to just prepend the for-loop with the @threads macro
-"""
+A naive threaded implementation of this would be to just prepend the for-loop with the @threads macro
 
-# ╔═╡ df637f5c-d702-4e7d-81f5-cbefac75c13b
+```julia
 function naive_threaded_apply_sum(f, x)
 	s = zero(eltype(x))
 	Threads.@threads for i in eachindex(x)
@@ -303,18 +421,32 @@ function naive_threaded_apply_sum(f, x)
 	end
 	return s
 end
+```
+"""
+
+# ╔═╡ df637f5c-d702-4e7d-81f5-cbefac75c13b
+
 
 # ╔═╡ f4602617-c87b-4ce9-bbd0-7d3715b5c7e1
+md"""
+```julia
 naive_threaded_apply_sum(x->exp(-x), xlarge)
+```
+"""
+
+# ╔═╡ bd6bd1e9-66bf-421d-bb7b-4be4528a2701
+
 
 # ╔═╡ 2a9f6170-b3d6-4fbb-ba48-2f82098b3849
 md"""
-We see that the naive threaded version gives the incorrect answer. This is because we have multiple threads writing to the same location in memory resulting in a race condition. If we run this block multiple times you will get different answers depending on the essentially random order that each thread writes to `s`.
+We see that the naive threaded version gives the incorrect answer. This is because we have multiple threads writing to the same location in memory resulting in a race condition. If we run this block multiple times (**try this**) you will get different answers depending on the essentially random order that each thread writes to `s`.
 
 To fix this issue there are two solutions. The first is to create a separate variable that holds the sum for each thread
 """
 
 # ╔═╡ 0fbce4a6-0a0c-4251-be50-c13add4c4768
+md"""
+```julia
 function threaded_sol1_apply_sum(f, x)
 	partial = zeros(eltype(x), Threads.nthreads())
 	# Do a partial reduction on each thread
@@ -325,12 +457,23 @@ function threaded_sol1_apply_sum(f, x)
 	# Now group everything together
 	return sum(partial)
 end
+```
+"""
+
+# ╔═╡ 1f3b66c5-2845-4f3f-befd-e7e94243368c
+
 
 # ╔═╡ 74ff761d-b1e4-4468-8f24-77fb84bda8ac
+md"""
+```julia
 threaded_sol1_apply_sum(x->exp(-x), xlarge)
+```
+"""
 
-# ╔═╡ 05394871-a38e-46f1-af89-992848c7206c
-@benchmark threaded_sol1_apply_sum($(x->exp(-x)), $xlarge)
+# ╔═╡ 73097493-1abe-4c6e-9965-9dde6c97611e
+md"""
+Which now gives the correct answer.
+"""
 
 # ╔═╡ aad7b000-7f4b-4901-8513-078eae85ca67
 md"""
@@ -338,6 +481,8 @@ The other solution is to use Atomics. Atomics are special types that do the trac
 """
 
 # ╔═╡ 2969c283-4105-4c25-ae39-9e169c195f00
+md"""
+```julia
 function threaded_atomic_apply_sum(f, x)
 	s = Threads.Atomic{eltype(x)}(zero(eltype(x)))
 	Threads.@threads for i in eachindex(x)
@@ -346,21 +491,56 @@ function threaded_atomic_apply_sum(f, x)
 	# Access the atomic element and return it
 	return s[]
 end
+```
+"""
+
+# ╔═╡ c037381a-8b6e-4bfa-b39a-e8c6ed264f71
+
 
 # ╔═╡ 21de2f77-b5ed-4b62-94e3-ca6e22a80e43
+md"""
+```julia
 threaded_atomic_apply_sum(x->exp(-x), xlarge)
+```
+"""
+
+# ╔═╡ cc4990eb-74f3-4b57-9b1d-0689fb2f6604
+
 
 # ╔═╡ 79222f00-3d55-4914-9d9d-b3c7b1ed6c69
+md"""
+Both approaches gives the same answer, however let's benchmark both solutions:
+
+```julia
+@benchmark threaded_sol1_atomic_apply_sum($(x->exp(-x)), $xlarge)
+```
+"""
+
+# ╔═╡ 6b496229-98bf-4312-9faf-f22aae633843
+
+
+# ╔═╡ 4768f5c4-b37b-4667-9b42-d0352c8b5dde
+md"""
+```julia
 @benchmark threaded_atomic_apply_sum($(x->exp(-x)), $xlarge)
+```
+"""
+
+# ╔═╡ f82d29b5-4d18-4c66-9703-9445b205d1ff
+
 
 # ╔═╡ dfa50bc7-2250-4326-b7a6-724a975c4928
 md"""
-Fomr this we can see that `Atomic` operations are usually very slow and should only be used if absolutely necessary.
+The atomic solution is substantially slower than the manual solution. In fact, atomics should only be used if absolutely necessary. Otherwise the programmer should try to find a more manual solution.
+
+### Using Higher-Level Threading Packages
 
 In general multi-threading programming can be quite difficult and error prone. Luckily there are a number of packages in Julia that can make this much simpler. The [`JuliaFolds`](https://github.com/JuliaFolds) ecosystem has a large number of packages. For instance the [`FLoops.jl`](https://github.com/JuliaFolds/FLoops.jl). FLoops.jl provides two macros that enable a simple for-loop to be used for a variety of different execution mechanisms. For instance, every previous verion of apply_sum can be written as
 """
 
 # ╔═╡ c8b7983f-295d-4ca4-9810-e0f130c5e92c
+md"""
+```julia
 function floops_apply_sum(f, x; executor=ThreadedEx())
 	s = zero(eltype(x))
 	@floop for i in eachindex(x)
@@ -368,6 +548,11 @@ function floops_apply_sum(f, x; executor=ThreadedEx())
 	end
 	return s
 end
+```
+"""
+
+# ╔═╡ 7912e780-59cd-46d6-8a3a-a1eb47b6f9cf
+
 
 # ╔═╡ a14e0cb2-42b5-41ea-a2f3-83a725baf38c
 md"""
@@ -375,20 +560,46 @@ Pay special attention to the additional `executor` keyword argument. FLoops.jl p
  - `SequentialEx` runs the for-loop serially (similar to `apply_sum`)
  - `ThreadedEx` runs the for-loop using threading, while avoiding data-races (similar to `threaded_sol1_apply_sum`)
  - `CUDAEx` runs the for-loop vectorized on the GPU using CUDA.jl. (this is experimental)
- - `DistributedEx()` runs the for-loop using Julia's distributed computing infrastruture (see below).
+ - `DistributedEx` runs the for-loop using Julia's distributed computing infrastruture (see below).
 
-Using the `ThreadedEx` we find
+We can then easily run both threaded and serial versions of the algorithm by just changing the `executor`
 """
 
+# ╔═╡ 44ddfdd9-7898-4561-b46a-045bcc1ae467
+md"""
+```julia
+floops_apply_sum(x->exp(-x), xlarge; executor=SerialEx())
+```
+"""
+
+# ╔═╡ 256ca1f5-403f-4eb3-8422-19724fa95526
+
+
 # ╔═╡ 872a2066-8c51-4597-89e8-5a902f40c2cc
+md"""
+```julia
 floops_apply_sum(x->exp(-x), xlarge; executor=ThreadedEx())
+```
+"""
+
+# ╔═╡ 23cf56d9-b53e-4be6-8dae-a6ebb8e0f6a4
+
+
+# ╔═╡ df842625-04af-43d0-b802-3e4a9841c172
+md"""
+Benchmarking the `Floops` version
+
+```julia
+@benchmark floops_apply_sum($(x->exp(-x)), $xlarge; executor=ThreadedEx())
+```
+"""
+
+# ╔═╡ 4f23d7c3-6d85-4d03-8d05-dd0719ebcbe3
+
 
 # ╔═╡ 529f73c3-b8ba-4b4b-bab1-7aa84c2a3a29
-@benchmark floops_apply_sum($(x->exp(-x)), $xlarge; executor=ThreadedEx())
-
-# ╔═╡ b5f84f95-2a16-49f9-979a-3ae610d71de0
 md"""
-Which gives the correct answer and is roughly as fast as our hand-written `threaded_sol1_apply_sum` solution.
+is almost as fast as our hand-written example, but requires less understanding of race-conditions in threading.
 """
 
 # ╔═╡ e7163af8-3534-44fc-8e8f-ef1c692c972e
@@ -442,20 +653,34 @@ Given these `CuArray` objects, our `serial_add!` function could be written as
 """
 
 # ╔═╡ 0218d82e-35b4-4109-bbc8-b1d51c97ab6f
+md"""
+```julia
 function bcast_add!(out, x, y)
 	out .= x .+ y
 	return out
 end
+```
+"""
+
+# ╔═╡ d7fdf09a-3c59-4dba-b089-ae6033b57809
+
 
 # ╔═╡ 891a9803-7fd0-4a83-95ab-58b9bd44f8f2
 md"""
 !!! note
-
-Pay special attention to the `.=`. This ensures that not intermediate array is created on the GPU.
+	Pay special attention to the `.=`. This ensures that not intermediate array is created on the GPU.
 """
 
 # ╔═╡ 7ce8025e-16be-47e0-988d-85947cc4e359
+md"""
+Running this on the gpu is then as simple as
+```julia
 @benchmark bcast_add!($outlarge_gpu, $xlarge_gpu, $ylarge_gpu)
+```
+"""
+
+# ╔═╡ 6b34f668-25d1-4c9b-8c1a-d08fcdc5dea0
+
 
 # ╔═╡ 2020675b-859b-4939-9f8d-138995ce1d18
 md"""
@@ -465,7 +690,14 @@ using our CPU verions of the arrays
 """
 
 # ╔═╡ 147bbd17-abf6-465f-abd0-895cb742f896
+md"""
+```julia
 @benchmark bcast_add!($outlarge, $xlarge, $ylarge)
+```
+"""
+
+# ╔═╡ 1e88e7c1-f239-4da1-8af8-4f629ef86cb7
+
 
 # ╔═╡ ccf924ae-fada-4635-af68-ab1fb612a5bc
 md"""
@@ -482,7 +714,14 @@ Similarly our more complicated function `serial_sinadd!` could also be written a
 """
 
 # ╔═╡ 13085fcb-75db-41ec-b8ad-b509798037d7
+md"""
+```julia
 outlarge_gpu .= xlarge_gpu .+ sin.(ylarge_gpu)
+```
+"""
+
+# ╔═╡ 751950c0-ccae-4316-91cf-089ddaae95ad
+
 
 # ╔═╡ 4c7383d8-c7ac-48c0-814d-abc7cfc7c447
 md"""
@@ -492,26 +731,35 @@ While Julia's array base GPU programming is extremely powerful, sometimes we hav
 something more low-level. For instance, suppose our function accesses specific elements of
 a `CuArray` that isn't handled through the usual linear algebra of broadcast interface.
 
-In this case when we try to index into a `CuArray` we get the following error:
+In this case when we try to index into a `CuArray` we get a `Scalar Indexing` error
 """
 
 # ╔═╡ 175e02af-6762-474f-a728-e77a2f6fa771
+md"""
+```julia
 xlarge_gpu[1]
+```
+"""
+
+# ╔═╡ d3e64cea-3b29-4d8b-8ee1-1353674c1d89
+
 
 # ╔═╡ e4ca8a18-1bc9-4730-95ae-d2a1edc30114
 md"""
-The error message here is very clear about what is happening. When accessing a single element,
+Analyzing the error message tell us what is happening. When accessing a single element,
 the CuArray will first copy the entire array to the CPU and then access the element.
 This is incredibly slow! So how to we deal with this?
 
 The first approach is to see if you can rewrite the function so that you can make use of
-`CUDA.jl` array interface. If this is not possible then you will need to write a custom kernel.
+`CUDA.jl` broadcasting interface. If this is not possible then you will need to write a custom kernel.
 
 To do this let's adapt our simple example to demonstrate the general approach to writing
 CUDA kernels
 """
 
 # ╔═╡ bebb0e97-cfb3-46ac-80aa-2ada3159e4f5
+md"""
+```julia
 function gpu_kernel_all!(out, x, y)
     index = (blockIdx().x - 1) * blockDim().x + threadIdx().x
     stride = gridDim().x * blockDim().x
@@ -520,6 +768,10 @@ function gpu_kernel_all!(out, x, y)
 	end
 	return nothing
 end
+```
+"""
+
+# ╔═╡ 759be8ef-7136-4330-abfe-0ffd212883d3
 
 
 # ╔═╡ 6b40113f-5017-4530-9d76-fadeab58973c
@@ -528,17 +780,31 @@ This creates the kernel function. This looks almost identical to our `serial_add
 """
 
 # ╔═╡ a5688604-240e-4d5d-8252-672fc789cd05
+md"""
+```julia
 # Compile the CUDA kernel and run it
 CUDA.@sync @cuda threads=256 gpu_kernel_all!(outlarge_gpu, xlarge_gpu, ylarge_gpu)
+```
+"""
 
 # ╔═╡ 8ff25eb9-a32f-410f-a430-d123c2f3c884
 md"""
 !!! note 
-Due to the nature of GPU programming we need to specify the number of threads to run the kernel on. Here we use 256 as a default value. However, this is not optimal and the `CUDA.jl` documentation provides additional advice on how to optimize these parameters
+	Due to the nature of GPU programming we need to specify the number of threads to run the kernel on. Here we use 256 as a default value. However, this is not optimal and the `CUDA.jl` documentation provides additional advice on how to optimize these parameters
+"""
+
+# ╔═╡ c6436555-0cb9-4738-af64-8d3fbd1c07c0
+md"""
+`@cuda` will launch our custom kernel on the GPU asynchronously. The `CUDA.@sync` then causes Julia to wait until the kernel is finished running. 
+
+Finally to get our result from the GPU we then just use the `Array` constructor
+```julia
+Array(outlarge_gpu)
+```
 """
 
 # ╔═╡ 3f4daf38-704e-41b0-94f1-d10043d8fb5b
-Array(outlarge_gpu)
+
 
 # ╔═╡ 32d560e6-c5de-4740-81ba-dccc717d9677
 md"""
@@ -571,19 +837,30 @@ dynamical control flow.
 
 #### GPU memory
 Another important consideration is the time it takes to move memory on and off of the GPU.
-To see how long this takes let's benchmark the cu function which move memory from the CPU to the GPU
+To see how long this takes let's benchmark the cu function which move memory from the CPU to the GPU.
 """
 
 # ╔═╡ 56a8891c-8993-43f9-bfff-81b520b10b88
+md"""
+```julia
 @benchmark cu($xlarge)
+```
+"""
+
+# ╔═╡ 3522798d-7e38-4db6-91b6-474e5d8d9119
+
 
 # ╔═╡ 619ff9da-9562-4bd9-be89-69482091cdba
 md"""
-Similarly we can benchmark the time it takes to transform from the GPU to the CPU usin
+Similarly we can benchmark the time it takes to transform from the GPU to the CPU.
+
+```julia
+@benchmark Array($outlarge_gpu)
+```
 """
 
 # ╔═╡ d9a844e5-de7b-4266-85ea-01f27f2932c2
-@benchmark Array($outlarge_gpu)
+
 
 # ╔═╡ 8d6d2117-3513-470f-87e1-8f00dd340172
 md"""
@@ -597,7 +874,7 @@ that if the computation on the CPU takes more than 1 ms, then moving it to the G
 # ╔═╡ b2eb604f-9180-4e48-9ae5-04162583fb33
 md"""
 
-## Distributed Computing
+## Distributed Computing (Switch to the REPL here)
 
 Distributed computing differs from all other parallelization strategies we have used.
 Distributed computing is when multiple independent processes are used together for computation.
@@ -811,7 +1088,7 @@ PlutoUI = "~0.7.49"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.8.3"
+julia_version = "1.8.4"
 manifest_format = "2.0"
 project_hash = "d7b42c1a752400bf43102508b531987b90cca1eb"
 
@@ -963,7 +1240,7 @@ version = "4.5.0"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "0.5.2+0"
+version = "1.0.1+0"
 
 [[deps.CompositionsBase]]
 git-tree-sha1 = "455419f7e328a1a2493cabc6428d79e951349769"
@@ -1562,90 +1839,126 @@ version = "17.4.0+0"
 
 # ╔═╡ Cell order:
 # ╟─20a0e044-8d13-4d21-bbad-edce6b5cdf53
+# ╟─e17b15bd-337d-4809-8b6c-2ed0f3701a9e
+# ╟─c989d4b7-c566-49a4-84fe-28b0e8f8c963
 # ╟─e6020e3a-77c7-11ed-2be9-e987cee1edf0
 # ╟─fb75265d-b154-4913-8714-ee68959682b4
 # ╟─c23fcdf1-4fd8-4859-abb3-8e08b4476046
 # ╟─766c47e4-f8ff-4d5b-868a-d13b52a8a1c1
 # ╟─b8e1a548-9c4d-40f1-baf3-c833151e7eba
 # ╟─a1f9058a-9c7f-494e-9b73-f5acc4778604
-# ╠═441099b3-4103-4cff-9deb-3c2153d657c6
+# ╟─441099b3-4103-4cff-9deb-3c2153d657c6
+# ╠═8c198d15-4367-44e8-9de0-43a468bfbac2
 # ╟─cadf8a67-1c1e-4850-9723-ef92196671dd
+# ╟─9fede501-3324-4076-a2ff-3b464063e5c9
 # ╠═7f5c5849-feef-4581-9356-8146cba48b9e
 # ╠═799e73d9-4857-466e-b645-8ee15566b03f
 # ╠═d490a507-4b9d-4077-9eaf-ae4ac3d149a1
 # ╠═7be8c14e-e258-4deb-abdf-a042f873465a
 # ╠═d8ff3dd3-e1ea-4f20-8937-8f8f995402fa
-# ╠═cc00d185-1b7e-40f5-8036-da4132dc0700
+# ╟─cc00d185-1b7e-40f5-8036-da4132dc0700
+# ╠═576491d9-0c0c-4740-b73a-165c61ce3fed
 # ╟─34ad1196-a1d7-4118-b4da-426af6826c7d
-# ╠═f58b7f3a-09ba-4221-989c-6885abef6eec
-# ╠═57bd871d-06fc-4050-9024-aaaf52297d0a
+# ╠═7623b88a-ba60-450e-86fb-8890354f7a94
+# ╟─a872cf65-a11e-4371-9d4d-41ea92c55369
+# ╠═547df3f2-b2fe-4f22-a0ac-3ba6bdd3171c
+# ╟─57bd871d-06fc-4050-9024-aaaf52297d0a
+# ╠═f51bd7cb-97fd-4d5e-bcac-a114f19abe7d
 # ╟─566eb7e1-0e2f-4ea7-8770-a6b2c95c1eb4
+# ╠═e4e98981-1964-43a3-aa81-4fef27d7f864
+# ╟─7f0ff927-71ea-4ab9-99aa-c4a6655b545c
 # ╠═d774d485-cfef-4373-9fed-77618ea928de
+# ╟─ccf102f3-9e85-4f70-b65e-6b4b056cf7e3
 # ╠═fb6f9256-e874-418a-b226-83a9173b9ec2
-# ╠═540326cd-5f2c-4b07-8dd6-1c65f63af7d6
+# ╟─540326cd-5f2c-4b07-8dd6-1c65f63af7d6
 # ╟─1364924b-0cbd-443d-a319-9701708cbd15
 # ╟─54d083d4-3bf8-4ed7-95b5-203e13cc3249
 # ╠═c6228b0b-22b8-4e3d-95d2-350987544b85
-# ╠═b9e13054-7641-45f1-8cd6-c8565a9f5d1f
-# ╠═a861c729-e49a-4742-bbed-0a849319745b
+# ╟─b9e13054-7641-45f1-8cd6-c8565a9f5d1f
+# ╠═11f7af26-92d5-4430-bdde-5aad69859f2e
 # ╟─d1bae4b3-6455-458b-a00c-f7e8eda201c3
 # ╟─3214e9e9-bcae-43b4-8e07-e8106310cf83
-# ╠═e468d9fd-ead0-4ce4-92b1-cb96132f6921
-# ╠═478eaa1d-509a-4fba-8b65-cb45561f9157
+# ╟─e468d9fd-ead0-4ce4-92b1-cb96132f6921
+# ╠═f9841e19-68ad-411e-88c6-363996b7a95c
+# ╟─478eaa1d-509a-4fba-8b65-cb45561f9157
+# ╠═14b676f0-b3b3-41a0-8f08-80b4fae29ec3
 # ╟─c815af66-cb82-4dd0-a4b8-3c9cb4a8d9f2
 # ╠═5852589e-388c-43bf-9ff5-da46af141680
 # ╠═69ada451-8806-4398-933a-e02efb28deea
 # ╠═8ebab57a-d4e5-4d50-8c5b-a95ed51487c9
 # ╠═c06da2eb-ed9f-4986-854c-9b8d830e662b
+# ╠═54b2e366-f409-4603-a57a-b711202c4887
 # ╠═07eddd9c-c53f-49e7-9d61-2f5d54711a1c
+# ╠═b5666e45-dcf6-4ea8-9e83-7609f2091f83
 # ╟─45639208-ec9f-4aef-adb0-7a2c4467353a
+# ╟─bd78505c-904c-4e65-9160-6b3ebf02c21e
 # ╠═1ee1af8c-191c-4677-84fc-2cdeac39607c
-# ╠═32068e63-5ad5-4d0d-bee6-205597db610b
-# ╠═acca6a78-2c37-433f-beeb-c771e24ec2f9
+# ╟─32068e63-5ad5-4d0d-bee6-205597db610b
+# ╠═d7ad4f01-2f7e-4dcc-8e32-88ebbf807a06
 # ╟─5c5ce94e-1411-4b26-af48-2cd836b0857c
 # ╠═df637f5c-d702-4e7d-81f5-cbefac75c13b
-# ╠═f4602617-c87b-4ce9-bbd0-7d3715b5c7e1
+# ╟─f4602617-c87b-4ce9-bbd0-7d3715b5c7e1
+# ╠═bd6bd1e9-66bf-421d-bb7b-4be4528a2701
 # ╟─2a9f6170-b3d6-4fbb-ba48-2f82098b3849
-# ╠═0fbce4a6-0a0c-4251-be50-c13add4c4768
+# ╟─0fbce4a6-0a0c-4251-be50-c13add4c4768
+# ╠═1f3b66c5-2845-4f3f-befd-e7e94243368c
 # ╠═74ff761d-b1e4-4468-8f24-77fb84bda8ac
-# ╠═05394871-a38e-46f1-af89-992848c7206c
+# ╟─73097493-1abe-4c6e-9965-9dde6c97611e
 # ╟─aad7b000-7f4b-4901-8513-078eae85ca67
-# ╠═2969c283-4105-4c25-ae39-9e169c195f00
-# ╠═21de2f77-b5ed-4b62-94e3-ca6e22a80e43
-# ╠═79222f00-3d55-4914-9d9d-b3c7b1ed6c69
+# ╟─2969c283-4105-4c25-ae39-9e169c195f00
+# ╠═c037381a-8b6e-4bfa-b39a-e8c6ed264f71
+# ╟─21de2f77-b5ed-4b62-94e3-ca6e22a80e43
+# ╠═cc4990eb-74f3-4b57-9b1d-0689fb2f6604
+# ╟─79222f00-3d55-4914-9d9d-b3c7b1ed6c69
+# ╠═6b496229-98bf-4312-9faf-f22aae633843
+# ╟─4768f5c4-b37b-4667-9b42-d0352c8b5dde
+# ╠═f82d29b5-4d18-4c66-9703-9445b205d1ff
 # ╟─dfa50bc7-2250-4326-b7a6-724a975c4928
 # ╠═463eab77-8c30-4071-bf84-a1aad685c21e
-# ╠═c8b7983f-295d-4ca4-9810-e0f130c5e92c
+# ╟─c8b7983f-295d-4ca4-9810-e0f130c5e92c
+# ╠═7912e780-59cd-46d6-8a3a-a1eb47b6f9cf
 # ╟─a14e0cb2-42b5-41ea-a2f3-83a725baf38c
-# ╠═872a2066-8c51-4597-89e8-5a902f40c2cc
-# ╠═529f73c3-b8ba-4b4b-bab1-7aa84c2a3a29
-# ╟─b5f84f95-2a16-49f9-979a-3ae610d71de0
+# ╟─44ddfdd9-7898-4561-b46a-045bcc1ae467
+# ╠═256ca1f5-403f-4eb3-8422-19724fa95526
+# ╟─872a2066-8c51-4597-89e8-5a902f40c2cc
+# ╠═23cf56d9-b53e-4be6-8dae-a6ebb8e0f6a4
+# ╠═df842625-04af-43d0-b802-3e4a9841c172
+# ╠═4f23d7c3-6d85-4d03-8d05-dd0719ebcbe3
+# ╟─529f73c3-b8ba-4b4b-bab1-7aa84c2a3a29
 # ╟─e7163af8-3534-44fc-8e8f-ef1c692c972e
 # ╠═72cd207c-7a63-4e29-a6d8-110bcf65ecdc
 # ╠═5215d6a5-5823-4d3b-9086-ebd975d4393b
 # ╠═63b3c6bb-32e8-4907-9dcb-11c951c16aaf
 # ╠═fb8023f9-9d13-4cd4-bb53-2a462573cf35
-# ╠═0116005e-c436-4dad-89bd-47260cfa706f
-# ╠═0218d82e-35b4-4109-bbc8-b1d51c97ab6f
+# ╟─0116005e-c436-4dad-89bd-47260cfa706f
+# ╟─0218d82e-35b4-4109-bbc8-b1d51c97ab6f
+# ╠═d7fdf09a-3c59-4dba-b089-ae6033b57809
 # ╟─891a9803-7fd0-4a83-95ab-58b9bd44f8f2
-# ╠═7ce8025e-16be-47e0-988d-85947cc4e359
-# ╠═2020675b-859b-4939-9f8d-138995ce1d18
+# ╟─7ce8025e-16be-47e0-988d-85947cc4e359
+# ╠═6b34f668-25d1-4c9b-8c1a-d08fcdc5dea0
+# ╟─2020675b-859b-4939-9f8d-138995ce1d18
 # ╠═147bbd17-abf6-465f-abd0-895cb742f896
-# ╠═ccf924ae-fada-4635-af68-ab1fb612a5bc
+# ╠═1e88e7c1-f239-4da1-8af8-4f629ef86cb7
+# ╟─ccf924ae-fada-4635-af68-ab1fb612a5bc
 # ╟─144bb14e-861a-4665-8b50-513b0f463546
-# ╠═13085fcb-75db-41ec-b8ad-b509798037d7
-# ╠═4c7383d8-c7ac-48c0-814d-abc7cfc7c447
-# ╠═175e02af-6762-474f-a728-e77a2f6fa771
+# ╟─13085fcb-75db-41ec-b8ad-b509798037d7
+# ╠═751950c0-ccae-4316-91cf-089ddaae95ad
+# ╟─4c7383d8-c7ac-48c0-814d-abc7cfc7c447
+# ╟─175e02af-6762-474f-a728-e77a2f6fa771
+# ╠═d3e64cea-3b29-4d8b-8ee1-1353674c1d89
 # ╟─e4ca8a18-1bc9-4730-95ae-d2a1edc30114
-# ╠═bebb0e97-cfb3-46ac-80aa-2ada3159e4f5
+# ╟─bebb0e97-cfb3-46ac-80aa-2ada3159e4f5
+# ╠═759be8ef-7136-4330-abfe-0ffd212883d3
 # ╟─6b40113f-5017-4530-9d76-fadeab58973c
-# ╠═a5688604-240e-4d5d-8252-672fc789cd05
+# ╟─a5688604-240e-4d5d-8252-672fc789cd05
 # ╟─8ff25eb9-a32f-410f-a430-d123c2f3c884
+# ╟─c6436555-0cb9-4738-af64-8d3fbd1c07c0
 # ╠═3f4daf38-704e-41b0-94f1-d10043d8fb5b
 # ╟─32d560e6-c5de-4740-81ba-dccc717d9677
 # ╟─6be7f9a4-7c80-4c2b-8dfb-080609f716e8
-# ╠═56a8891c-8993-43f9-bfff-81b520b10b88
-# ╠═619ff9da-9562-4bd9-be89-69482091cdba
+# ╟─56a8891c-8993-43f9-bfff-81b520b10b88
+# ╠═3522798d-7e38-4db6-91b6-474e5d8d9119
+# ╟─619ff9da-9562-4bd9-be89-69482091cdba
 # ╠═d9a844e5-de7b-4266-85ea-01f27f2932c2
 # ╟─8d6d2117-3513-470f-87e1-8f00dd340172
 # ╟─b2eb604f-9180-4e48-9ae5-04162583fb33
