@@ -58,9 +58,20 @@ Once you have installed Julia, run the following command in your terminal to ins
 julia -e 'using Pkg; Pkg.add("Pluto")'
 ```
 
-To start Julia, run:
+Set the desired number of threads Julia should run with using an environment variable:
+**Windows:**
+```cmd
+SET JULIA_NUM_THREADS=auto
+```
+**Mac & Linux:**
 ```bash
-julia --threads=auto 
+export JULIA_NUM_THREADS=auto
+```
+
+
+Then, in the same terminal, start Julia by running:
+```bash
+julia
 ```
 
 To start Pluto, run the following from inside Julia:
