@@ -94,8 +94,8 @@ The morning content is a single notebook, while the afternoon is split into mult
 | Topic | Link | 
 |-------|------|
 | 1. Intro to Julia | https://github.com/sefffal/AASJuliaWorkshop/raw/main/1-intro-to-julia.jl |
-| 2. Using Python Libraries | |
-| 3. Using Macros | |
+| 2. Using Python Libraries | https://github.com/sefffal/AASJuliaWorkshop/raw/main/2-calling-python.jl |
+| 3. Using Macros | http://github.com/sefffal/AASJuliaWorkshop/raw/main/3-using-macros.jl |
 | 4. Astronomy Packages | https://github.com/sefffal/AASJuliaWorkshop/raw/main/4-astro-packages.jl|
 | 5. Code Optimization | |
 | 6. Parallel Computing | |
