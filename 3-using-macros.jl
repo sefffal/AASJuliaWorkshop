@@ -17,9 +17,11 @@ Preprocessor "macro" systems, like that of C/C++, work at the source code level 
 
 ### The Abstract Syntax Tree
 
+    begin
     str1 = "3 * 4 + 5"
     ex1 = Meta.parse(str1)
     typeof(ex1)
+    end
 
 Try it.
 """
@@ -45,8 +47,10 @@ The `Expr` type has two fields, a `head` and an `args`. The `head` declares the 
 
 Note that the expression `ex1` can be written directly in AST syntax.
 
+    begin
     ex2 = Expr(:call, :+, Expr(:call, :*, 3, 4), 5)
     ex1 == ex2
+	end
 
 Try it.
 """
@@ -64,9 +68,11 @@ The `:` character has two syntatic purposes in Julia. It signifies a `Symbol` or
 
 A `Symbol` is an interned string used as a building-block of an expression.
 
+    begin
     sym = :foo
     typeof(sym)
     sym == Symbol("foo")
+    end
 
 Try it.
 """
@@ -94,8 +100,10 @@ In the context of expressions, symbols are used to indicate access to variables.
 
 The second purpose of the `:` character is to create expression objects without using the explicit `Expr` constructor. This is referred to as *quoting*.
 
+    begin
     ex3 = :(3 * 4 + 5)
     ex1 == ex2 == ex3
+    end
 
 Try this example.
 """
@@ -111,12 +119,14 @@ There is a second syntatic form of quoting, called a `quote` block (i.e. `quote 
 
 Try the following example.
 
+    begin
     ex4 = quote
         x = 1
         y = 2
         x + y
     end
     typeof(ex4)
+    end
 """
 
 # ╔═╡ c47eb25e-ff42-47a0-9949-11228e3c0535
@@ -128,8 +138,10 @@ md"""
 
 Julia allows *interpolation* of literals or expressions into quoted expressions by prefixing a variable with the `$` character. For example.
 
+    begin
     a = 1;
     ex5 = :($a + b)
+    end
 
 Try it.
 """
@@ -141,8 +153,10 @@ Try it.
 md"""
 Splatting is also possible.
 
+    begin
     args = [:x, :y, :x];
     :(f(1, $(args...)))
+    end
 
 And this too.
 """
@@ -273,9 +287,10 @@ Here is an example.
 
 # ╔═╡ 1522314b-4982-439e-ab97-933869a5f307
 md"""
+    begin
     x = foo(2)
-
     x
+    end
 
 !!! note
     The result of the function call is the return type, not the return value.
@@ -286,9 +301,10 @@ md"""
 
 # ╔═╡ 3de9644d-b66a-45b8-945d-6e000319f2b9
 md"""
+    begin
     y = foo("bar")
-
     y
+    end
 """
 
 # ╔═╡ 28487c59-7df4-41b9-859a-79438b1d3b06
