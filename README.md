@@ -59,6 +59,7 @@ julia -e 'using Pkg; Pkg.add("Pluto")'
 ```
 
 Set the desired number of threads Julia should run with using an environment variable:
+
 **Windows:**
 ```cmd
 SET JULIA_NUM_THREADS=auto
