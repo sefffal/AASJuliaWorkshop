@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.19
+# v0.19.18
 
 using Markdown
 using InteractiveUtils
@@ -19,12 +19,6 @@ using FLoops
 
 # ╔═╡ 72cd207c-7a63-4e29-a6d8-110bcf65ecdc
 using CUDA
-
-# ╔═╡ 20a0e044-8d13-4d21-bbad-edce6b5cdf53
-# ╠═╡ disabled = true
-#=╠═╡
-using PlutoUI
-  ╠═╡ =#
 
 # ╔═╡ c989d4b7-c566-49a4-84fe-28b0e8f8c963
 PlutoUI.TableOfContents()
@@ -61,7 +55,8 @@ md"""
 """
 
 # ╔═╡ 766c47e4-f8ff-4d5b-868a-d13b52a8a1c1
-LocalResource("vectorization.png")
+# Resource("https://github.com/sefffal/AASJuliaWorkshop/blob/main/vectorization.jpeg")
+LocalResource("/Users/paul/Downloads/vectorization.png")
 
 # ╔═╡ b8e1a548-9c4d-40f1-baf3-c833151e7eba
 md"""
@@ -277,12 +272,12 @@ which defaults to 1, the master thread.
 
 
 !!! tip
-	This the number of `Julia` threads not the number of BLAS or threads. To set those do
+	This is the number of `Julia` threads not the number of BLAS threads. To set those do
 	```julia
 	using LinearAlgebra
 	BLAS.set_num_threads(8)
 	```
-	where 8 is the number of threads you want to use
+	where 8 is the number of threads you want to use.
 """
 
 # ╔═╡ 11f7af26-92d5-4430-bdde-5aad69859f2e
@@ -334,9 +329,10 @@ md"""
 This is actually slower than what we previously got without threading! This is because
 threading has significant overhead! For simple computations, like adding two small vectors the overhead from threading dominates over any benefit you gain from using multiple threads.
 
-In order to gain a benefit from threading our operation needs to
-	1. Be expensive enough that the threading overhead is relatively minor
-	2. Be applied to a large enough vector to limit the threading overhead.
+In order to gain a benefit from threading our operation needs to:
+
+1. Be expensive enough that the threading overhead is relatively minor
+2. Be applied to a large enough vector to limit the threading overhead.
 
 To see the benefit of threading we can then simply increase the number of operations
 """
@@ -382,7 +378,7 @@ To determine whether threading is useful, a user should benchmark the code. Addi
 
 # ╔═╡ bd78505c-904c-4e65-9160-6b3ebf02c21e
 md"""
-There are additional considerations to keep in mind when multi-threading. A important one is that Julia's Base threading utilities are rather low-level and do not guarantee threading safety, e.g., to be free of **race-conditions**. To see this let's consider a simple map and sum function
+There are additional considerations to keep in mind when multi-threading. An important one is that Julia's Base threading utilities are rather low-level and do not guarantee threading safety, e.g., to be free of **race-conditions**. To see this, let's consider a simple map and sum function.
 
 ```julia
 function apply_sum(f, x)
@@ -535,7 +531,7 @@ The atomic solution is substantially slower than the manual solution. In fact, a
 
 ### Using Higher-Level Threading Packages
 
-In general multi-threading programming can be quite difficult and error prone. Luckily there are a number of packages in Julia that can make this much simpler. The [`JuliaFolds`](https://github.com/JuliaFolds) ecosystem has a large number of packages. For instance the [`FLoops.jl`](https://github.com/JuliaFolds/FLoops.jl). FLoops.jl provides two macros that enable a simple for-loop to be used for a variety of different execution mechanisms. For instance, every previous verion of apply_sum can be written as
+In general multi-threading programming can be quite difficult and error prone. Luckily there are a number of packages in Julia that can make this much simpler. The [`JuliaFolds`](https://github.com/JuliaFolds) ecosystem has a large number of packages, for instance, the [`FLoops.jl`](https://github.com/JuliaFolds/FLoops.jl). FLoops.jl provides two macros that enable a simple for-loop to be used for a variety of different execution mechanisms. For instance, every previous version of apply_sum can be written as
 """
 
 # ╔═╡ c8b7983f-295d-4ca4-9810-e0f130c5e92c
@@ -896,30 +892,29 @@ the one supported in the standard library [`Distributed.jl`](https://tdocs.julia
 Distributed's multiprocessing uses the **manager-worker** paradigm. This is where the programmer
 controls the manager directly and then it assigns tasks to the rest of the workers.
 To start multiprocessing with Julia, there are two options
-  1. `julia -p 3` will start julia with 3 workers (4 processes in total). This will also
-     automatically bring the Distributed library into scope
-  2. Is to manually add Julia processors in the repl. To do this in a fresh Julia session,
-     we do
+
+1. `julia -p 3` will start julia with 3 workers (4 processes in total). This will also automatically bring the Distributed library into scope
+2. Is to manually add Julia processors in the repl. To do this in a fresh Julia session,
+
+we do
 
 ````julia
 using Distributed
 addprocs(3)
 ````
 
-!!!note
-On HPC systems, you can also use [`ClusterManagers.jl`](https://github.com/JuliaParallel/ClusterManagers.jl)
-to setup a distributed environment using different job queue systems, such as Slurm and SGE.
+!!! note
+    On HPC systems, you can also use [`ClusterManagers.jl`] (https://github.com/JuliaParallel/ClusterManagers.jl)
+    to setup a distributed environment using different job queue systems, such as Slurm and SGE.
 
-This add 3 worker processors to the Julia process. The check the id's of the workers we
+This add 3 worker processors to the Julia process. To check the id's of the workers we
 can use the `workers` function
 
 ````julia
 workers()
 ````
 
-We see that there are three workers with id's 2, 3, 4. The manager worker is always given
-the first id `1` and corresponds to the current Julia session. To see this we can use the
-`myid()` function
+We see that there are three workers with id's 2, 3, 4. The manager worker is always given the first id `1` and corresponds to the current Julia session. To see this we can use the `myid()` function
 
 ````julia
 myid()
@@ -932,10 +927,7 @@ f = remotecall(rand, 2, 4, 4)
 ````
 
 The first argument is the function we wish to call on the worker, the second argument is the id of the worker, and the rest of the arguments are passed to the function.
-One thing to notice is that `remotecall` doesn't return the actual result of the computation.
-Instead `remotecall` returns a `Future`. This is because we don't necessarily need to return the result
-of the computation to the manager processor, which would induce additional communication costs.
-However, to get the value of the computation you can use the `fetch` function
+One thing to notice is that `remotecall` doesn't return the actual result of the computation. Instead `remotecall` returns a `Future`. This is because we don't necessarily need to return the result of the computation to the manager processor, which would induce additional communication costs. However, to get the value of the computation you can use the `fetch` function
 
 ````julia
 fetch(f)
@@ -952,9 +944,7 @@ This call does the same thing as the `remotecall` function above but the first a
 set to any to let Julia itself decide which processor to run it on.
 
 ### Loading modules on a Distributed system
-Since Julia uses a manager-worker, workflow we need to manually ensure that every process has access
-to all the required data. For instance, suppose we wanted to compute the mean of a vector. Typically
-we would do
+Since Julia uses a manager-worker workflow, we need to manually ensure that every process has access to all the required data. For instance, suppose we wanted to compute the mean of a vector. Typically, we would do
 
 ````julia
 using Statistics
@@ -1006,14 +996,10 @@ using BenchmarkTools
 @benchmark distributed_apply_sum($(x->exp(-x)), $d)
 ````
 
-!!!note
-We did not have to define
+!!! note
+    We did not have to define
 
-One important thing to note is that the distributed macro uses Julia's static scheduler.
-This means that the for loop is automatically split evenly among all workers. For the
-above calculation this make sense since `f` is a cheap variable. However, suppose that
-`f` is extremely expensive and its run time varies greatly depending on its argument.
-A trivial example of this would be
+One important thing to note is that the distributed macro uses Julia's static scheduler. This means that the for loop is automatically split evenly among all workers. For the above calculation this make sense since `f` is a cheap variable. However, suppose that `f` is extremely expensive and its run time varies greatly depending on its argument. A trivial example of this would be
 
 ````julia
 @everywhere function dynamic_f(x)
@@ -1026,9 +1012,7 @@ A trivial example of this would be
 end
 ````
 
-In this case, rather than equally splitting the run-time across all processes, it makes
-sense to assign work to processors as they finish their current task. This is known as
-a **dynamic scheduler** and is provided in julia by `pmap`
+In this case, rather than equally splitting the run-time across all processes, it makes sense to assign work to processors as they finish their current task. This is known as a **dynamic scheduler** and is provided in julia by `pmap`
 
 ````julia
 x = randn(10)
@@ -1048,9 +1032,7 @@ However, for cheaper operations
 @btime out = distributed_apply_sum(exp, d)
 ````
 
-we find that `@distributed` is faster since it has less communication overhead. Therefore,
-the general recommendation is to use `@distributed` when reducing over cheap and consistent
-function, and to use `pmap` when the function is expensive.
+we find that `@distributed` is faster since it has less communication overhead. Therefore, the general recommendation is to use `@distributed` when reducing over cheap and consistent function, and to use `pmap` when the function is expensive.
 
 ## Conclusion
 
@@ -1058,9 +1040,8 @@ In this tutorial we have shown how Julia provides an extensive library of parall
 
 In addition to the packages used in this tutorial, there are several other
 potential parallel processing packages in the Julia ecosystem. Some of these are:
-- [`Dagger.jl`](https://github.com/JuliaParallel/Dagger.jl): Similar to the python dask package that represents parallel computation using a
-  directed acylic graph or DAG. This is built on Distributed and is useful for a more functional
-  approach to parallel programming. It is more common in data science applications
+
+- [`Dagger.jl`](https://github.com/JuliaParallel/Dagger.jl): Similar to the python dask package that represents parallel computation using a directed acylic graph or DAG. This is built on Distributed and is useful for a more functional approach to parallel programming. It is more common in data science applications
 - [`MPI.jl`](https://github.com/JuliaParallel/MPI.jl): The Julia bindings to the MPI standard. The standard parallel workhorse in HPC.
 - [`Elemental.jl`](https://github.com/JuliaParallel/Elemental.jl) links to the C++ distributed linear algebra and optimization package.
 - [`DistributedArrays.jl`](https://github.com/JuliaParallel/DistributedArrays.jl)
@@ -1088,7 +1069,7 @@ PlutoUI = "~0.7.49"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.8.4"
+julia_version = "1.8.3"
 manifest_format = "2.0"
 project_hash = "d7b42c1a752400bf43102508b531987b90cca1eb"
 
@@ -1240,7 +1221,7 @@ version = "4.5.0"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "1.0.1+0"
+version = "0.5.2+0"
 
 [[deps.CompositionsBase]]
 git-tree-sha1 = "455419f7e328a1a2493cabc6428d79e951349769"
@@ -1839,7 +1820,7 @@ version = "17.4.0+0"
 
 # ╔═╡ Cell order:
 # ╟─20a0e044-8d13-4d21-bbad-edce6b5cdf53
-# ╟─e17b15bd-337d-4809-8b6c-2ed0f3701a9e
+# ╠═e17b15bd-337d-4809-8b6c-2ed0f3701a9e
 # ╟─c989d4b7-c566-49a4-84fe-28b0e8f8c963
 # ╟─e6020e3a-77c7-11ed-2be9-e987cee1edf0
 # ╟─fb75265d-b154-4913-8714-ee68959682b4
