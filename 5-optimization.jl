@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.19
+# v0.19.18
 
 using Markdown
 using InteractiveUtils
@@ -75,9 +75,6 @@ BenchmarkTools.Trial: 10000 samples with 1 evaluation.
 md"""
 **Try this benchmark below**
 """
-
-# ╔═╡ 97f7a295-5f33-483c-8a63-b74c8f79eef3
-
 
 # ╔═╡ 530368ec-ec33-4204-ac44-9dbabaca0dc4
 
@@ -253,11 +250,11 @@ Running `@code_warntype` we now get
 
 # ╔═╡ 94b14c6c-952b-41c6-87e9-27785896d023
 md"""
-`zero` is a generic function that will create a 0 element that matches the type of the elements of the vector `x`.
+`zero` is a generic function that will create a `0` element that matches the type of the elements of the vector `x`.
 
 One important thing to note is that while Julia uses types to optimize the code, using types in the function arguments does not impact performance at all. 
 
-To see this let's look at an explicit versoin of `my_sum`
+To see this let's look at an explicit version of `my_sum`
 ```julia
 function my_sum_explicit(x::Vector{Float64})
 	s = zero(eltype(x))
@@ -365,10 +362,10 @@ In this case, the `getindex` function is type unstable
 
 # ╔═╡ 7175833a-f7e3-4b83-9d5d-869b5ad2c78b
 md"""
-This is because Julia is not able to determine the type of `x.a` until runtime and so the compiler is unable to optimize the function.  This is because `AbstractArray` is abstract type. 
+This is because Julia is not able to determine the type of `x.a` until runtime and so the compiler is unable to optimize the function.  This is because `AbstractArray` is an abstract type. 
 
 !!! tip
-	For maximum performance only use constrete types as `struct` fields/properties.
+	For maximum performance only use concrete types as `struct` fields/properties.
 
 To fix this we can use *parametric types* 
 
@@ -399,7 +396,7 @@ md"""
 
 # ╔═╡ 0898b019-488d-45b3-a8c2-cd72b4491049
 md"""
-and now because the exact layout `MyType2` of is concrete, Julia is able to efficiently compile the code.
+and now because the exact layout `MyType2` is concrete, Julia is able to efficiently compile the code.
 """
 
 # ╔═╡ a8c622c8-2eaf-4792-94fd-e18d622c3b23
@@ -521,7 +518,7 @@ md"""
 
 # ╔═╡ 16b55184-b515-47c8-bbb3-f899a920e9f8
 md"""
-One of Julia's greatest strength over python is surprisingly its ability to vectorize algorithms and **fuse** multiple algorithms together. 
+One of Julia's greatest strengths over python is surprisingly its ability to vectorize algorithms and **fuse** multiple algorithms together. 
 
 In python to get speed you typically need to use numpy to vectorize operations. For example, to compute the operation `x*y + c^3` you would do 
 ```python
@@ -535,7 +532,7 @@ python> out = a + b
 ```
 What this means is that python/numpy is not able to fuse multiple operations together. This essentially loops through the data twice and can lead to substantial overhead. 
 
-To demonstrate this let's first write the `numpy` version of this simple function
+To demonstrate this, let's first write the `numpy` version of this simple function
 """
 
 # ╔═╡ 4dd74c86-333b-4e7a-944b-619675e9f6ed
@@ -604,7 +601,7 @@ md"""
 
 # ╔═╡ 7fad0fc0-1a6a-437a-a1c2-ce2c70d41acf
 md"""
-And right away, we have almost a factor of 4X speed increa  in Julia compared to numpy 
+And right away, we have almost a factor of 4X speed increase in Julia compared to numpy.
 
 However, we can make this loop faster! Julia automatically checks the bounds of an array every loop iteration. This makes Julia memory safe but adds overhead to the loop.
 
@@ -733,7 +730,7 @@ Both of our broadcasting functions perform identically to our hand-tuned for loo
 
 # ╔═╡ ea2e2140-b826-4a05-a84c-6309241da0e7
 md"""
-Julia's broadcasting interface is also generic and a lot more powerful than the usual NumPy vectorization algorithm. For instance, suppose we wanted to perform an eigendecomposition on many matrices. In Julia, this is given in the `LinearAlgebra` module and the `eigen` function. To apply this to a vector of matrices, we then need to change `eigen` to `eigen.`
+Julia's broadcasting interface is also generic and a lot more powerful than the usual NumPy vectorization algorithm. For instance, suppose we wanted to perform an eigen decomposition on many matrices. In Julia, this is given in the `LinearAlgebra` module and the `eigen` function. To apply this to a vector of matrices, we then need to change `eigen` to `eigen.` .
 """
 
 # ╔═╡ e8c1c746-ce30-4bd9-a10f-c68e3823faac
@@ -781,8 +778,11 @@ This is just the start of various performance tips in Julia. There exist many ot
   - [`StaticArrays.jl`](https://github.com/JuliaArrays/StaticArrays.jl): Provides a fixed size array that enables aggressive SIMD and optimization for small vector operations.
   - [`StructArrays.jl`](https://github.com/JuliaArrays/StructArrays.jl): Provides an interface that acts like an array whose elements are a struct but actually stores each field/property of the struct as an independent array.
   - [`LoopVectorization.jl`](https://github.com/JuliaSIMD/LoopVectorization.jl) specifically the `@turbo` macro that can rewrite loops to make extra use of SIMD.
-  - [`Tulio.jl`](https://github.com/mcabbott/Tullio.jl): A package that enable einsum style summations/tensor operations and automatically uses multi-threading and other array optimization.
+  - [`Tulio.jl`](https://github.com/mcabbott/Tullio.jl): A package that enables Einstein summation-style summations or tensor operations and automatically uses multi-threading and other array optimization.
 """
+
+# ╔═╡ 97f7a295-5f33-483c-8a63-b74c8f79eef3
+
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -804,7 +804,7 @@ PyCall = "~1.94.1"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.8.4"
+julia_version = "1.8.3"
 manifest_format = "2.0"
 project_hash = "0ef5d0582d704353803bf3ec48e942b983cdbeae"
 
@@ -886,7 +886,7 @@ version = "4.5.0"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "1.0.1+0"
+version = "0.5.2+0"
 
 [[deps.Conda]]
 deps = ["Downloads", "JSON", "VersionParsing"]
@@ -1352,5 +1352,6 @@ version = "17.4.0+0"
 # ╠═687b18c3-52ae-48fa-81d6-c41b48edd719
 # ╟─dcd6c1f3-ecb8-4a3f-ae4f-3c5b6f8494e7
 # ╟─20bcc70f-0c9f-40b6-956a-a286cea393f8
+# ╠═97f7a295-5f33-483c-8a63-b74c8f79eef3
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
