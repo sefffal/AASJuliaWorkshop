@@ -1,17 +1,11 @@
 ### A Pluto.jl notebook ###
-# v0.19.18
+# v0.19.19
 
 using Markdown
 using InteractiveUtils
 
 # ╔═╡ 3ba5672b-18ff-4320-a4d2-954e0b873d47
 using PlutoUI; TableOfContents()
-
-# ╔═╡ 667e42f2-b6b5-4eb9-817f-57aee042d7ca
-using PyCall
-
-# ╔═╡ fa825783-6f48-4f0d-b346-220ae9e2fb11
-using PythonCall
 
 # ╔═╡ 4c788b44-77e1-11ed-0ce7-5914857ba421
 md"""
@@ -27,29 +21,44 @@ md"""
 ### PyCall & PyJulia
 
     using PyCall
+"""
 
+# ╔═╡ 41103ed5-6145-4772-84d6-8858ebb560ac
+
+
+# ╔═╡ 306378d0-91a3-4f07-94fb-45b8cc474274
+md"""
 A simple example, calculate 1/√2 using Python. First, import the math module.
 
+    begin
     math = pyimport("math")
     math.sin(math.pi /4)
+    end
 
 Try it.
 """
+
+# ╔═╡ 667e42f2-b6b5-4eb9-817f-57aee042d7ca
+
 
 # ╔═╡ 06d63e41-f9b9-4c75-87d4-241beb454dc5
 md"""
 Here is another example using matplotlib.pyplot. The example uses the `pyimport_conda` function to load `matplotlib.pyplot`. If `matplotlib.pyplot` fails because `matplotlib` hasn't been installed, then it will automatically install `matplotlib`, which may take some time, or retry `pyimport`.
 
-    begin
+    let
     plt = pyimport_conda("matplotlib.pyplot", "matplotlib")
-    x = range(0; stop=2*pi, length=1000); y = sin.(3*x + 4*cos.(2*x));
+    x = range(0; stop=2*pi, length=1000); y = sin.(3 .* x + 4 .* cos.(2. * x));
     plt.plot(x, y, color="red", linewidth=2.0, linestyle="--")
-    plt.show()
+    plt.savefig("plt_example.png")
+    LocalResource("plt_example.png")
     end
 
 !!! note
     `x` and `y` are calculated using Julia and the plotting uses Python.
 """
+
+# ╔═╡ 20c226ca-44e6-4565-b601-07f5df7828ac
+
 
 # ╔═╡ 7728f44a-93e1-4514-8964-6351a5ebff07
 md"""
@@ -61,7 +70,7 @@ First install `astropy` using `pyimport_conda`.
 """
 
 # ╔═╡ 8648cd40-d805-49b3-b05a-93a4b6ea0a20
-pyimport_conda("astropy.io.fits", "astropy")
+
 
 # ╔═╡ f790ac60-d874-4e95-8d34-252f44ff32b1
 md"""
@@ -70,7 +79,7 @@ For example, try the following block of code to access the `time` and `rate` of 
     begin
     py\"""
     import astropy.io.fits as fits
-    mos = fits.open("Users/paul/Downloads/P0801780301M1S001SRCTSR8001.FIT")
+    mos = fits.open("https://github.com/sefffal/AASJuliaWorkshop/blob/main/P0801780301M1S001SRCTSR8001.FIT?raw=true")
     time, rate = mos[1].data["TIME"], mos[1].data["RATE"]
     \"""
     (py"time"[1:3], py"rate"[1:3])
@@ -78,14 +87,7 @@ For example, try the following block of code to access the `time` and `rate` of 
 """
 
 # ╔═╡ 90c8b0db-f94b-440c-b05a-72e3f6483051
-begin
-py"""
-import astropy.io.fits as fits
-mos = fits.open("/Users/paul/Downloads/P0801780301M1S001SRCTSR8001.FIT")
-time, rate = mos[1].data["TIME"], mos[1].data["RATE"]
-"""
-(py"time"[1:3], py"rate"[1:3])
-end
+
 
 # ╔═╡ 5d883d2b-515f-4286-a2ab-15127ac6b5ea
 md"""
@@ -115,7 +117,7 @@ PyCall and PythonCall can be used in the same Julia session on Unix (Linux, OS X
 """
 
 # ╔═╡ 0db12101-fcf9-48a3-a337-ad53a4713f6d
-ENV["JULIA_PYTHONCALL_EXE"] = "@PyCall"
+
 
 # ╔═╡ 93e945de-7ceb-4124-b3db-f6b64e2e46bb
 md"""
@@ -123,6 +125,9 @@ Now import `PythonCall`:
 
     using PythonCall
 """
+
+# ╔═╡ fa825783-6f48-4f0d-b346-220ae9e2fb11
+
 
 # ╔═╡ 99e16357-0113-4a12-8a22-f627c6fdef84
 md"""
@@ -141,12 +146,7 @@ Try it.
 """
 
 # ╔═╡ 5805328f-cb15-41c7-8b4c-9990cd0df319
-begin
-re = PythonCall.pyimport("re")
-words = re.findall("[a-zA-Z]+", "PythonCall.jl is great")
-sentence = Py(" ").join(words)
-pyconvert(String, sentence)  # convert Python string to Julia string
-end
+
 
 # ╔═╡ 56141542-b8eb-4139-8199-acea701449e2
 md"""
@@ -157,7 +157,7 @@ A wrapper is a Julia type that wraps a Python object, but gives it Julia semanti
     begin
     x = pylist([3,4,5])
     y = PyList{Union{Nothing, Int64}}(x)
-    push!(y, Nothing)
+    push!(y, nothing)
     append!(y, 1:2)
     x
     end
@@ -165,14 +165,17 @@ A wrapper is a Julia type that wraps a Python object, but gives it Julia semanti
 Try it.
 """
 
+# ╔═╡ 966da8a4-6cee-47c3-bca1-a90460218f3f
+
+
 # ╔═╡ 4adcd9bb-40dc-47dc-941d-66d34465b218
 md"""
 There are wrappers for other container types, such as PyDict and PySet.
 
-    begin
-    x = pyimport("array").array("i", [3,4,5])
-    y = PyArray(x)
-    sum(y)
+    let
+    x = PythonCall.pyimport("array").array("i", [3,4,5])
+    y = PythonCall.PyArray(x)
+    println(sum(y))
     y[1] = 0
     x
     end
@@ -229,34 +232,13 @@ Assuming you are using `CondaPkg.jl`, PythonCall uses it to automatically instal
 
 """
 
-# ╔═╡ 20c226ca-44e6-4565-b601-07f5df7828ac
-begin
-plt = pyimport_conda("matplotlib.pyplot", "matplotlib")
-x = range(0; stop=2*pi, length=1000); y = sin.(3*x + 4*cos.(2*x));
-plt.plot(x, y, color="red", linewidth=2.0, linestyle="--")
-plt.show()
-end
-
-# ╔═╡ 966da8a4-6cee-47c3-bca1-a90460218f3f
-begin
-x = PythonCall.pylist([3,4,5])
-y = PythonCall.PyList{Union{Nothing, Int64}}(x)
-push!(y, Nothing)
-append!(y, 1:2)
-x
-end
-
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
-PythonCall = "6099a3de-0909-46bc-b1f4-468b9a2dfc0d"
 
 [compat]
 PlutoUI = "~0.7.49"
-PyCall = "~1.94.1"
-PythonCall = "~0.9.10"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -265,7 +247,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.3"
 manifest_format = "2.0"
-project_hash = "4badbdc0e2c2cffd63117b35b0aa3ad8953e84ed"
+project_hash = "08cc58b1fbde73292d848136b97991797e6c5429"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -293,28 +275,6 @@ version = "0.11.4"
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
 version = "0.5.2+0"
-
-[[deps.Conda]]
-deps = ["Downloads", "JSON", "VersionParsing"]
-git-tree-sha1 = "6e47d11ea2776bc5627421d59cdcc1296c058071"
-uuid = "8f4d0f93-b110-5947-807f-2305c1781a2d"
-version = "1.7.0"
-
-[[deps.CondaPkg]]
-deps = ["JSON3", "Markdown", "MicroMamba", "Pidfile", "Pkg", "TOML"]
-git-tree-sha1 = "64dd885fa25c61fdf6b27e90d6adedf564ae363a"
-uuid = "992eb4ea-22a4-4c89-a5bb-47a3300528ab"
-version = "0.2.15"
-
-[[deps.DataAPI]]
-git-tree-sha1 = "e8119c1a33d267e16108be441a287a6981ba1630"
-uuid = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
-version = "1.14.0"
-
-[[deps.DataValueInterfaces]]
-git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
-uuid = "e2d170a0-9d28-54be-80f0-106bbe20a464"
-version = "1.0.0"
 
 [[deps.Dates]]
 deps = ["Printf"]
@@ -356,32 +316,11 @@ version = "0.2.2"
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
-[[deps.IteratorInterfaceExtensions]]
-git-tree-sha1 = "a3f24677c21f5bbe9d2a714f95dcd58337fb2856"
-uuid = "82899510-4779-5014-852e-03e436cf321d"
-version = "1.0.0"
-
-[[deps.JLLWrappers]]
-deps = ["Preferences"]
-git-tree-sha1 = "abc9885a7ca2052a736a600f7fa66209f96506e1"
-uuid = "692b3bcd-3c85-4b1f-b108-f13ce0eb3210"
-version = "1.4.1"
-
 [[deps.JSON]]
 deps = ["Dates", "Mmap", "Parsers", "Unicode"]
 git-tree-sha1 = "3c837543ddb02250ef42f4738347454f95079d4e"
 uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 version = "0.21.3"
-
-[[deps.JSON3]]
-deps = ["Dates", "Mmap", "Parsers", "SnoopPrecompile", "StructTypes", "UUIDs"]
-git-tree-sha1 = "84b10656a41ef564c39d2d477d7236966d2b5683"
-uuid = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
-version = "1.12.0"
-
-[[deps.LazyArtifacts]]
-deps = ["Artifacts", "Pkg"]
-uuid = "4af54fe1-eca0-43a8-85a7-787d91b784e3"
 
 [[deps.LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
@@ -417,12 +356,6 @@ git-tree-sha1 = "65f28ad4b594aebe22157d6fac869786a255b7eb"
 uuid = "6c6e2e6c-3030-632d-7369-2d6c69616d65"
 version = "0.1.4"
 
-[[deps.MacroTools]]
-deps = ["Markdown", "Random"]
-git-tree-sha1 = "42324d08725e200c23d4dfb549e0d5d89dede2d2"
-uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
-version = "0.5.10"
-
 [[deps.Markdown]]
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
@@ -431,12 +364,6 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 deps = ["Artifacts", "Libdl"]
 uuid = "c8ffd9c3-330d-5841-b78e-0817d7145fa1"
 version = "2.28.0+0"
-
-[[deps.MicroMamba]]
-deps = ["Pkg", "Scratch", "micromamba_jll"]
-git-tree-sha1 = "a6a4771aba1dc8942bc0f44ff9f8ee0f893ef888"
-uuid = "0b3b1443-0f03-428d-bdfb-f27f9c1191ea"
-version = "0.1.12"
 
 [[deps.Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
@@ -454,22 +381,11 @@ deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
 version = "0.3.20+0"
 
-[[deps.OrderedCollections]]
-git-tree-sha1 = "85f8e6578bf1f9ee0d11e7bb1b1456435479d47c"
-uuid = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
-version = "1.4.1"
-
 [[deps.Parsers]]
 deps = ["Dates", "SnoopPrecompile"]
 git-tree-sha1 = "6466e524967496866901a78fca3f2e9ea445a559"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
 version = "2.5.2"
-
-[[deps.Pidfile]]
-deps = ["FileWatching", "Test"]
-git-tree-sha1 = "2d8aaf8ee10df53d0dfb9b8ee44ae7c04ced2b03"
-uuid = "fa939f87-e72e-5be4-a000-7fc836dbe307"
-version = "1.3.0"
 
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
@@ -482,27 +398,9 @@ git-tree-sha1 = "eadad7b14cf046de6eb41f13c9275e5aa2711ab6"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 version = "0.7.49"
 
-[[deps.Preferences]]
-deps = ["TOML"]
-git-tree-sha1 = "47e5f437cc0e7ef2ce8406ce1e7e24d44915f88d"
-uuid = "21216c6a-2e73-6563-6e65-726566657250"
-version = "1.3.0"
-
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
-
-[[deps.PyCall]]
-deps = ["Conda", "Dates", "Libdl", "LinearAlgebra", "MacroTools", "Serialization", "VersionParsing"]
-git-tree-sha1 = "53b8b07b721b77144a0fbbbc2675222ebf40a02d"
-uuid = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
-version = "1.94.1"
-
-[[deps.PythonCall]]
-deps = ["CondaPkg", "Dates", "Libdl", "MacroTools", "Markdown", "Pkg", "REPL", "Requires", "Serialization", "Tables", "UnsafePointers"]
-git-tree-sha1 = "1052188e0a017d4f4f261f12307e1fa1b5b48588"
-uuid = "6099a3de-0909-46bc-b1f4-468b9a2dfc0d"
-version = "0.9.10"
 
 [[deps.REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
@@ -517,21 +415,9 @@ git-tree-sha1 = "45e428421666073eab6f2da5c9d310d99bb12f9b"
 uuid = "189a3867-3050-52da-a836-e630ba90ab69"
 version = "1.2.2"
 
-[[deps.Requires]]
-deps = ["UUIDs"]
-git-tree-sha1 = "838a3a4188e2ded87a4f9f184b4b0d78a1e91cb7"
-uuid = "ae029012-a4dd-5104-9daa-d747884805df"
-version = "1.3.0"
-
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 version = "0.7.0"
-
-[[deps.Scratch]]
-deps = ["Dates"]
-git-tree-sha1 = "f94f779c94e58bf9ea243e77a37e16d9de9126bd"
-uuid = "6c6a2e73-6563-6170-7368-637461726353"
-version = "1.1.1"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
@@ -552,28 +438,10 @@ uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 deps = ["LinearAlgebra", "SparseArrays"]
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
-[[deps.StructTypes]]
-deps = ["Dates", "UUIDs"]
-git-tree-sha1 = "ca4bccb03acf9faaf4137a9abc1881ed1841aa70"
-uuid = "856f2bd8-1eba-4b0a-8007-ebc267875bd4"
-version = "1.10.0"
-
 [[deps.TOML]]
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 version = "1.0.0"
-
-[[deps.TableTraits]]
-deps = ["IteratorInterfaceExtensions"]
-git-tree-sha1 = "c06b2f539df1c6efa794486abfb6ed2022561a39"
-uuid = "3783bdb8-4a98-5b6b-af9a-565f29a5fe9c"
-version = "1.0.1"
-
-[[deps.Tables]]
-deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "LinearAlgebra", "OrderedCollections", "TableTraits", "Test"]
-git-tree-sha1 = "c79322d36826aa2f4fd8ecfa96ddb47b174ac78d"
-uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
-version = "1.10.0"
 
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
@@ -601,16 +469,6 @@ uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 [[deps.Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
-[[deps.UnsafePointers]]
-git-tree-sha1 = "c81331b3b2e60a982be57c046ec91f599ede674a"
-uuid = "e17b2a0c-0bdf-430a-bd0c-3a23cae4ff39"
-version = "1.0.0"
-
-[[deps.VersionParsing]]
-git-tree-sha1 = "58d6e80b4ee071f5efd07fda82cb9fbe17200868"
-uuid = "81def892-9a0e-5fdd-b105-ffc91e053289"
-version = "1.3.0"
-
 [[deps.Zlib_jll]]
 deps = ["Libdl"]
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
@@ -620,12 +478,6 @@ version = "1.2.12+3"
 deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
 version = "5.1.1+0"
-
-[[deps.micromamba_jll]]
-deps = ["Artifacts", "JLLWrappers", "LazyArtifacts", "Libdl", "Pkg"]
-git-tree-sha1 = "2a0e413383f56c604835d30ea11620bae63f99f2"
-uuid = "f8abcde7-e9b7-5caa-b8af-a437887ae8e4"
-version = "1.0.0+0"
 
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -641,7 +493,9 @@ version = "17.4.0+0"
 # ╔═╡ Cell order:
 # ╟─3ba5672b-18ff-4320-a4d2-954e0b873d47
 # ╟─4c788b44-77e1-11ed-0ce7-5914857ba421
-# ╠═f0c6b09d-8b64-4175-aacd-6b3ac72078f6
+# ╟─f0c6b09d-8b64-4175-aacd-6b3ac72078f6
+# ╠═41103ed5-6145-4772-84d6-8858ebb560ac
+# ╟─306378d0-91a3-4f07-94fb-45b8cc474274
 # ╠═667e42f2-b6b5-4eb9-817f-57aee042d7ca
 # ╟─06d63e41-f9b9-4c75-87d4-241beb454dc5
 # ╠═20c226ca-44e6-4565-b601-07f5df7828ac
@@ -658,7 +512,7 @@ version = "17.4.0+0"
 # ╠═5805328f-cb15-41c7-8b4c-9990cd0df319
 # ╟─56141542-b8eb-4139-8199-acea701449e2
 # ╠═966da8a4-6cee-47c3-bca1-a90460218f3f
-# ╠═4adcd9bb-40dc-47dc-941d-66d34465b218
+# ╟─4adcd9bb-40dc-47dc-941d-66d34465b218
 # ╠═adb77392-c109-4e90-917e-75a23e7f21a9
 # ╟─aa641087-0617-45ce-9ad1-69128fd155e9
 # ╟─00000000-0000-0000-0000-000000000001
