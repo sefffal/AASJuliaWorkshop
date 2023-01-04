@@ -58,6 +58,9 @@ md"""
 html"""
 <img src="https://github.com/sefffal/AASJuliaWorkshop/blob/main/vectorization.jpeg?raw=true"/>
 """
+html"""
+<img src="https://github.com/sefffal/AASJuliaWorkshop/blob/main/vectorization.jpeg?raw=true"/>
+"""
 
 # ╔═╡ b8e1a548-9c4d-40f1-baf3-c833151e7eba
 md"""

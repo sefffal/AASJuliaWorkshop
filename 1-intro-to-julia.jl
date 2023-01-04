@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.12
+# v0.19.17
 
 using Markdown
 using InteractiveUtils
@@ -1388,10 +1388,17 @@ There are several plotting packages for Julia. We will look at one package calle
 
 Makie is a data visualization ecosystem for the Julia programming language, with high performance and extensibility. It is available for Windows, Mac and Linux.
 
-    using GLMakie
+Makie has a number of different backends. `CairoMakie` makes static, publication quality plots and PDFs. `GLMakie` uses your GPU for 3D and interactive plots. There are also backends for embededing interactive plots on websites and for raytracing.
+
+    using CairoMakie
 
 !!! note
-    `GLMakie` is a complex and feature rich plotting package. It therefore has many dependancies that take some time to compile, so be patient when installing it.
+    `Makie` is a complex and feature rich plotting package. It therefore has many dependancies that take some time to compile, so be patient when installing it.
+
+	You may consider trying this example at a later date.
+
+
+
 """
 
 # ╔═╡ 1840579b-5067-45e1-ad3e-cae8775f0ce9
@@ -1399,75 +1406,72 @@ Makie is a data visualization ecosystem for the Julia programming language, with
 
 # ╔═╡ eafa144b-0899-4220-8adb-b6da5631e2c5
 md"""
-A simple scatter plot.
+A simple scatter plot:
 
-    begin
-    f = Figure()
-    ax = Axis(f[1, 1])
     xx = range(0, 10, length=100)
     yy = sin.(xx)
-    scatter!(ax, xx, yy)
-    f
-    end
+    scatter(ax, xx, yy)
 """
 
-# ╔═╡ 9f914b0b-e5e3-4dce-ae4b-6bebab60bd20
+# ╔═╡ 21ef1eaa-a124-4db2-8f9b-319203f7895f
 
 
 # ╔═╡ 25587198-a1c1-427d-b83e-f31339eeaf9d
 md"""
 
-Here is a rather complex example that shows the features and performanc of Makie.
 
+For more complicated examples, you can create Figures and Axes step by step. `Makie` uses a constraint solver to create great multi-axis layouts.
 Cut and paste the following code into the node.
 
-    begin
-    Base.@kwdef mutable struct Lorenz
-        dt::Float64 = 0.01
-        σ::Float64 = 10
-        ρ::Float64 = 28
-        β::Float64 = 8/3
-        x::Float64 = 1
-        y::Float64 = 1
-        z::Float64 = 1
-    end
-    
-    function step!(l::Lorenz)
-        dx = l.σ * (l.y - l.x)
-        dy = l.x * (l.ρ - l.z) - l.y
-        dz = l.x * l.y - l.β * l.z
-        l.x += l.dt * dx
-        l.y += l.dt * dy
-        l.z += l.dt * dz
-        Point3f(l.x, l.y, l.z)
-    end
-    
-    attractor = Lorenz()
-    
-    points = Observable(Point3f[])
-    colors = Observable(Int[])
-    
-    set_theme!(theme_black())
-    
-    fig, bx, l = lines(points, color = colors,
-        colormap = :inferno, transparency = true,
-        axis = (; type = Axis3, protrusions = (0, 0, 0, 0),
-            viewmode = :fit, limits = (-30, 30, -30, 30, 0, 50)))
+	let
+		fig = Figure(resolution=(800,600))
+	
+		# Create an axis in the first cell of the Figure
+		ax1 = Axis(fig[1,1], title="Axis 1")
+	
+		# Put two plots into this axis
+		scatterlines!(ax1, randn(40))
+		scatterlines!(ax1, randn(40))
+	
+		# Add another axis to the right
+		ax2 = Axis(fig[1,2], title="Axis 2")
+		x = -10:10
+		lines!(ax2, x, x.^2)
+	
+		# And one below
+		x = y = -5:0.5:5
+		z = x .^ 2 .+ y' .^ 2
+		
+		ax3 = Axis(fig[2, :], title="Axis 3")
+		cont = contour!(ax3, x, y, z; linewidth = 4, levels = 12,
+		    transparency = true, colormap=:greys)
+	
+		Colorbar(fig[1:2,3], cont, label="Colorbar 1")
+	
+		# And finally adjust the sizes of the rows
+		colsize!(fig.layout, 1, 500)
+		
+		
+		fig
+	end
 
-    record(fig, "lorenz.mp4", 1:120) do frame
-        for i in 1:50
-            push!(points[], step!(attractor))
-            push!(colors[], frame)
-        end
-        bx.azimuth[] = 1.7pi + 0.3 * sin(2pi * frame / 120)
-        notify.((points, colors))
-        l.colorrange = (0, frame)
-    end
-    fig
-    end
 """
 
 # ╔═╡ 6c26406d-e540-4bea-851e-45d64c13ace8
+md"""
+`Makie` also supports rich 3D, interactive, and animated plots with thousands of points. Here is an example from the [Makie documentation](https://docs.makie.org/dev/):
+"""
+
+# ╔═╡ 6e8ae7c9-b3ad-4531-ab67-32320c9295e8
+html"""
+<details>
+	<summary>Click to view</summary>
+<video src="https://docs.makie.org/dev/assets/index/code/output/lorenz.mp4" autoplay repeat controls/>
+
+</details>
+"""
+
+# ╔═╡ ee7c2384-b9a6-4986-9de6-b76e06790a83
 
 
 # ╔═╡ 08d678e6-c2d3-4aac-b7e3-8edf23a0abeb
@@ -1475,6 +1479,22 @@ md"""
 !!! note
     What have we learned about plotting?
     * Julia has several plotting packages with `Makie` having a wide range of features and high performance.
+"""
+
+# ╔═╡ e56c5a2a-f648-41ee-a7d8-b24a1ea1311e
+md"""
+!!! tip "Tips"
+	* [*Beautiful Makie*](https://beautiful.makie.org/dev/#feature-examples) presents a wide range of example plots
+	* The package [AlgebraOfGraphics.jl](https://aog.makie.org/dev/) provides an alternative, table-driven, and declarative syntax for plotting with Makie.
+
+	* The upcoming version of Julia, 1.9, will load packages like Makie up to $30\times$ faster
+
+	* RPRMakie provides provides raytracing support, to allow rendering beautiful 3D plots like the following	
+"""
+
+# ╔═╡ 4430854f-9038-4ef0-97e5-29181734b3f7
+html"""
+<img src="https://github.com/lazarusA/RPRMakieNotes/raw/main/imgs/rrg.png" width=400/>
 """
 
 # ╔═╡ 815333e0-7caa-4c24-a2b2-3cc10547dbc2
@@ -1815,6 +1835,123 @@ md"""
     * Julia has a wide variety of packages for general, scientific, and high performance computing.
 """
 
+# ╔═╡ 00000000-0000-0000-0000-000000000001
+PLUTO_PROJECT_TOML_CONTENTS = """
+[deps]
+Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
+
+[compat]
+Measurements = "~2.8.0"
+Unitful = "~1.12.2"
+"""
+
+# ╔═╡ 00000000-0000-0000-0000-000000000002
+PLUTO_MANIFEST_TOML_CONTENTS = """
+# This file is machine-generated - editing it directly is not advised
+
+julia_version = "1.8.3"
+manifest_format = "2.0"
+project_hash = "3006a5dc427787a608eb5b8823752744104754cd"
+
+[[deps.Artifacts]]
+uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
+
+[[deps.Calculus]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "f641eb0a4f00c343bbc32346e1217b86f3ce9dad"
+uuid = "49dc2e85-a5d0-5ad3-a950-438e2897f1b9"
+version = "0.5.1"
+
+[[deps.CompilerSupportLibraries_jll]]
+deps = ["Artifacts", "Libdl"]
+uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
+version = "0.5.2+0"
+
+[[deps.ConstructionBase]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "fb21ddd70a051d882a1686a5a550990bbe371a95"
+uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
+version = "1.4.1"
+
+[[deps.Dates]]
+deps = ["Printf"]
+uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
+
+[[deps.Libdl]]
+uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
+
+[[deps.LinearAlgebra]]
+deps = ["Libdl", "libblastrampoline_jll"]
+uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+
+[[deps.Measurements]]
+deps = ["Calculus", "LinearAlgebra", "Printf", "RecipesBase", "Requires"]
+git-tree-sha1 = "12950d646ce04fb2e89ba5bd890205882c3592d7"
+uuid = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
+version = "2.8.0"
+
+[[deps.OpenBLAS_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
+uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
+version = "0.3.20+0"
+
+[[deps.Printf]]
+deps = ["Unicode"]
+uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+
+[[deps.Random]]
+deps = ["SHA", "Serialization"]
+uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+
+[[deps.RecipesBase]]
+deps = ["SnoopPrecompile"]
+git-tree-sha1 = "18c35ed630d7229c5584b945641a73ca83fb5213"
+uuid = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
+version = "1.3.2"
+
+[[deps.Requires]]
+deps = ["UUIDs"]
+git-tree-sha1 = "838a3a4188e2ded87a4f9f184b4b0d78a1e91cb7"
+uuid = "ae029012-a4dd-5104-9daa-d747884805df"
+version = "1.3.0"
+
+[[deps.SHA]]
+uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+version = "0.7.0"
+
+[[deps.Serialization]]
+uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+
+[[deps.SnoopPrecompile]]
+git-tree-sha1 = "f604441450a3c0569830946e5b33b78c928e1a85"
+uuid = "66db9d55-30c0-4569-8b51-7e840670fc0c"
+version = "1.0.1"
+
+[[deps.SparseArrays]]
+deps = ["LinearAlgebra", "Random"]
+uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[[deps.UUIDs]]
+deps = ["Random", "SHA"]
+uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+
+[[deps.Unicode]]
+uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
+
+[[deps.Unitful]]
+deps = ["ConstructionBase", "Dates", "LinearAlgebra", "Random"]
+git-tree-sha1 = "d670a70dd3cdbe1c1186f2f17c9a68a7ec24838c"
+uuid = "1986cc42-f94f-5a68-af5c-568840ba703d"
+version = "1.12.2"
+
+[[deps.libblastrampoline_jll]]
+deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
+uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
+version = "5.1.1+0"
+"""
+
 # ╔═╡ Cell order:
 # ╟─d1366a55-b4fc-4ddb-b5c2-5f3381c48b49
 # ╟─09193424-25b9-45ce-840f-f24bbcc46c9d
@@ -1978,10 +2115,14 @@ md"""
 # ╟─1c1013c8-9707-44f8-ab87-93df08019517
 # ╠═1840579b-5067-45e1-ad3e-cae8775f0ce9
 # ╟─eafa144b-0899-4220-8adb-b6da5631e2c5
-# ╠═9f914b0b-e5e3-4dce-ae4b-6bebab60bd20
+# ╠═21ef1eaa-a124-4db2-8f9b-319203f7895f
 # ╟─25587198-a1c1-427d-b83e-f31339eeaf9d
-# ╠═6c26406d-e540-4bea-851e-45d64c13ace8
+# ╟─6c26406d-e540-4bea-851e-45d64c13ace8
+# ╟─6e8ae7c9-b3ad-4531-ab67-32320c9295e8
+# ╠═ee7c2384-b9a6-4986-9de6-b76e06790a83
 # ╟─08d678e6-c2d3-4aac-b7e3-8edf23a0abeb
+# ╟─e56c5a2a-f648-41ee-a7d8-b24a1ea1311e
+# ╟─4430854f-9038-4ef0-97e5-29181734b3f7
 # ╟─815333e0-7caa-4c24-a2b2-3cc10547dbc2
 # ╟─dec1df08-233c-47e9-866f-242e1c4f7340
 # ╟─ae70f4a9-6d8b-41d6-bf3a-50541c5e9535
@@ -2009,3 +2150,5 @@ md"""
 # ╟─f09f3133-6613-4c86-99e4-535335a65192
 # ╟─609b8bdf-0ff4-4c9b-8934-983ebd1f9eea
 # ╟─a1d42812-9cb1-440d-9efb-a4acf1376463
+# ╟─00000000-0000-0000-0000-000000000001
+# ╟─00000000-0000-0000-0000-000000000002
