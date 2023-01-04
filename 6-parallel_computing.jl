@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.18
+# v0.19.17
 
 using Markdown
 using InteractiveUtils
@@ -55,8 +55,9 @@ md"""
 """
 
 # ╔═╡ 766c47e4-f8ff-4d5b-868a-d13b52a8a1c1
-# Resource("https://github.com/sefffal/AASJuliaWorkshop/blob/main/vectorization.jpeg")
-LocalResource("/Users/paul/Downloads/vectorization.png")
+html"""
+<img src="https://github.com/sefffal/AASJuliaWorkshop/blob/main/vectorization.jpeg?raw=true"/>
+"""
 
 # ╔═╡ b8e1a548-9c4d-40f1-baf3-c833151e7eba
 md"""
@@ -609,10 +610,11 @@ number of very fast processors. On the other hand, a GPU has thousands of very s
 This dichotomy directly relates to the types of problems that are fast on a GPU compared to a CPU.
 
 To get started with GPUs in Julia you need to load the correct package one of
-	1. [CUDA.jl](https://github.com/JuliaGPU/CUDA.jl): NVIDIA GPUs, and the most stable GPU package
-    2. [AMDGPU.jl](https://github.com/JuliaGPU/AMDGPU.jl): AMD GPUs, actively developed but not as mature as CUDA; only works on linux due to ROCm support
-	3. [oneAPI.jl](https://github.com/JuliaGPU/oneAPI.jl): Intel GPUs, currently under active development so it may have bugs; only works on linux currently.
-	4. [Metal.jl](https://github.com/JuliaGPU/Metal.jl): Mac GPUs. Work in progress. Expect bugs and it is open to pull-requests.
+
+1. [CUDA.jl](https://github.com/JuliaGPU/CUDA.jl): NVIDIA GPUs, and the most stable GPU package
+2. [AMDGPU.jl](https://github.com/JuliaGPU/AMDGPU.jl): AMD GPUs, actively developed but not as mature as CUDA; only works on linux due to ROCm support
+3. [oneAPI.jl](https://github.com/JuliaGPU/oneAPI.jl): Intel GPUs, currently under active development so it may have bugs; only works on linux currently.
+4. [Metal.jl](https://github.com/JuliaGPU/Metal.jl): Mac GPUs. Work in progress. Expect bugs and it is open to pull-requests.
 
 For this tutorial I will be using the CUDA library. If your computer doesn't have a CUDA GPU
 then the examples below will not work.
@@ -1819,7 +1821,6 @@ version = "17.4.0+0"
 """
 
 # ╔═╡ Cell order:
-# ╟─20a0e044-8d13-4d21-bbad-edce6b5cdf53
 # ╠═e17b15bd-337d-4809-8b6c-2ed0f3701a9e
 # ╟─c989d4b7-c566-49a4-84fe-28b0e8f8c963
 # ╟─e6020e3a-77c7-11ed-2be9-e987cee1edf0
