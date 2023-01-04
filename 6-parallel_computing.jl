@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.18
+# v0.19.19
 
 using Markdown
 using InteractiveUtils
@@ -55,8 +55,9 @@ md"""
 """
 
 # ╔═╡ 766c47e4-f8ff-4d5b-868a-d13b52a8a1c1
-# Resource("https://github.com/sefffal/AASJuliaWorkshop/blob/main/vectorization.jpeg")
-LocalResource("/Users/paul/Downloads/vectorization.png")
+html"""
+<img src="https://github.com/sefffal/AASJuliaWorkshop/blob/main/vectorization.jpeg?raw=true"/>
+"""
 
 # ╔═╡ b8e1a548-9c4d-40f1-baf3-c833151e7eba
 md"""
@@ -128,7 +129,7 @@ Now let's benchmark our serial add to get a baseline for our performance.
 # ╔═╡ 34ad1196-a1d7-4118-b4da-426af6826c7d
 md"""
 Analyzing this on a Ryzen 7950x, it appears that the summation is 53.512 ns, or each
-addition takes only 0.05ns! Inverting this number would naively suggest that the computer I am using has a 19 GHz processor! 
+addition takes only 0.05ns! Inverting this number would naively suggest that the computer I am using has a 19 GHz processor!
 
 SIMD is the reason for this performance. Namely Julia's was able to automatically apply its auto-vectorization routines to use SIMD to accelerate the program.
 
@@ -609,10 +610,11 @@ number of very fast processors. On the other hand, a GPU has thousands of very s
 This dichotomy directly relates to the types of problems that are fast on a GPU compared to a CPU.
 
 To get started with GPUs in Julia you need to load the correct package one of
-	1. [CUDA.jl](https://github.com/JuliaGPU/CUDA.jl): NVIDIA GPUs, and the most stable GPU package
-    2. [AMDGPU.jl](https://github.com/JuliaGPU/AMDGPU.jl): AMD GPUs, actively developed but not as mature as CUDA; only works on linux due to ROCm support
-	3. [oneAPI.jl](https://github.com/JuliaGPU/oneAPI.jl): Intel GPUs, currently under active development so it may have bugs; only works on linux currently.
-	4. [Metal.jl](https://github.com/JuliaGPU/Metal.jl): Mac GPUs. Work in progress. Expect bugs and it is open to pull-requests.
+
+1. [CUDA.jl](https://github.com/JuliaGPU/CUDA.jl): NVIDIA GPUs, and the most stable GPU package
+2. [AMDGPU.jl](https://github.com/JuliaGPU/AMDGPU.jl): AMD GPUs, actively developed but not as mature as CUDA; only works on linux due to ROCm support
+3. [oneAPI.jl](https://github.com/JuliaGPU/oneAPI.jl): Intel GPUs, currently under active development so it may have bugs; only works on linux currently.
+4. [Metal.jl](https://github.com/JuliaGPU/Metal.jl): Mac GPUs. Work in progress. Expect bugs and it is open to pull-requests.
 
 For this tutorial I will be using the CUDA library. If your computer doesn't have a CUDA GPU
 then the examples below will not work.
@@ -785,13 +787,13 @@ CUDA.@sync @cuda threads=256 gpu_kernel_all!(outlarge_gpu, xlarge_gpu, ylarge_gp
 
 # ╔═╡ 8ff25eb9-a32f-410f-a430-d123c2f3c884
 md"""
-!!! note 
+!!! note
 	Due to the nature of GPU programming we need to specify the number of threads to run the kernel on. Here we use 256 as a default value. However, this is not optimal and the `CUDA.jl` documentation provides additional advice on how to optimize these parameters
 """
 
 # ╔═╡ c6436555-0cb9-4738-af64-8d3fbd1c07c0
 md"""
-`@cuda` will launch our custom kernel on the GPU asynchronously. The `CUDA.@sync` then causes Julia to wait until the kernel is finished running. 
+`@cuda` will launch our custom kernel on the GPU asynchronously. The `CUDA.@sync` then causes Julia to wait until the kernel is finished running.
 
 Finally to get our result from the GPU we then just use the `Array` constructor
 ```julia
@@ -1036,7 +1038,7 @@ we find that `@distributed` is faster since it has less communication overhead. 
 
 ## Conclusion
 
-In this tutorial we have shown how Julia provides an extensive library of parallel computing facilities. From single-core SIMD, to multi-threading, GPU computing, and distributed computation. Each of these can be used independently or together. 
+In this tutorial we have shown how Julia provides an extensive library of parallel computing facilities. From single-core SIMD, to multi-threading, GPU computing, and distributed computation. Each of these can be used independently or together.
 
 In addition to the packages used in this tutorial, there are several other
 potential parallel processing packages in the Julia ecosystem. Some of these are:
@@ -1069,7 +1071,7 @@ PlutoUI = "~0.7.49"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.8.3"
+julia_version = "1.8.4"
 manifest_format = "2.0"
 project_hash = "d7b42c1a752400bf43102508b531987b90cca1eb"
 
@@ -1221,7 +1223,7 @@ version = "4.5.0"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "0.5.2+0"
+version = "1.0.1+0"
 
 [[deps.CompositionsBase]]
 git-tree-sha1 = "455419f7e328a1a2493cabc6428d79e951349769"
@@ -1819,7 +1821,6 @@ version = "17.4.0+0"
 """
 
 # ╔═╡ Cell order:
-# ╟─20a0e044-8d13-4d21-bbad-edce6b5cdf53
 # ╠═e17b15bd-337d-4809-8b6c-2ed0f3701a9e
 # ╟─c989d4b7-c566-49a4-84fe-28b0e8f8c963
 # ╟─e6020e3a-77c7-11ed-2be9-e987cee1edf0
