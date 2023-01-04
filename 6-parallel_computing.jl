@@ -785,6 +785,9 @@ CUDA.@sync @cuda threads=256 gpu_kernel_all!(outlarge_gpu, xlarge_gpu, ylarge_gp
 ```
 """
 
+# ╔═╡ d895744d-888d-45ff-a7e5-8865be535194
+
+
 # ╔═╡ 8ff25eb9-a32f-410f-a430-d123c2f3c884
 md"""
 !!! note
@@ -1868,9 +1871,9 @@ version = "17.4.0+0"
 # ╠═5852589e-388c-43bf-9ff5-da46af141680
 # ╠═69ada451-8806-4398-933a-e02efb28deea
 # ╠═8ebab57a-d4e5-4d50-8c5b-a95ed51487c9
-# ╠═c06da2eb-ed9f-4986-854c-9b8d830e662b
+# ╟─c06da2eb-ed9f-4986-854c-9b8d830e662b
 # ╠═54b2e366-f409-4603-a57a-b711202c4887
-# ╠═07eddd9c-c53f-49e7-9d61-2f5d54711a1c
+# ╟─07eddd9c-c53f-49e7-9d61-2f5d54711a1c
 # ╠═b5666e45-dcf6-4ea8-9e83-7609f2091f83
 # ╟─45639208-ec9f-4aef-adb0-7a2c4467353a
 # ╟─bd78505c-904c-4e65-9160-6b3ebf02c21e
@@ -1904,7 +1907,7 @@ version = "17.4.0+0"
 # ╠═256ca1f5-403f-4eb3-8422-19724fa95526
 # ╟─872a2066-8c51-4597-89e8-5a902f40c2cc
 # ╠═23cf56d9-b53e-4be6-8dae-a6ebb8e0f6a4
-# ╠═df842625-04af-43d0-b802-3e4a9841c172
+# ╟─df842625-04af-43d0-b802-3e4a9841c172
 # ╠═4f23d7c3-6d85-4d03-8d05-dd0719ebcbe3
 # ╟─529f73c3-b8ba-4b4b-bab1-7aa84c2a3a29
 # ╟─e7163af8-3534-44fc-8e8f-ef1c692c972e
@@ -1919,7 +1922,7 @@ version = "17.4.0+0"
 # ╟─7ce8025e-16be-47e0-988d-85947cc4e359
 # ╠═6b34f668-25d1-4c9b-8c1a-d08fcdc5dea0
 # ╟─2020675b-859b-4939-9f8d-138995ce1d18
-# ╠═147bbd17-abf6-465f-abd0-895cb742f896
+# ╟─147bbd17-abf6-465f-abd0-895cb742f896
 # ╠═1e88e7c1-f239-4da1-8af8-4f629ef86cb7
 # ╟─ccf924ae-fada-4635-af68-ab1fb612a5bc
 # ╟─144bb14e-861a-4665-8b50-513b0f463546
@@ -1933,6 +1936,7 @@ version = "17.4.0+0"
 # ╠═759be8ef-7136-4330-abfe-0ffd212883d3
 # ╟─6b40113f-5017-4530-9d76-fadeab58973c
 # ╟─a5688604-240e-4d5d-8252-672fc789cd05
+# ╠═d895744d-888d-45ff-a7e5-8865be535194
 # ╟─8ff25eb9-a32f-410f-a430-d123c2f3c884
 # ╟─c6436555-0cb9-4738-af64-8d3fbd1c07c0
 # ╠═3f4daf38-704e-41b0-94f1-d10043d8fb5b
