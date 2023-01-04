@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.18
+# v0.19.19
 
 using Markdown
 using InteractiveUtils
@@ -54,8 +54,8 @@ end
 md"""
 Now let's check the performance of this function. To do this, we will use the excellent benchmarking package [`BenchmarTools.jl`](https://github.com/JuliaCI/BenchmarkTools.jl) and the macro `@benchmark`, which runs the function multiple times and outputs a histogram of the time it took to execute the function
 
-```julia-repl
-julia> @benchmark global_update()
+```julia
+@benchmark global_update()
 
 BenchmarkTools.Trial: 10000 samples with 1 evaluation.
  Range (min … max):   96.743 μs …   8.838 ms  ┊ GC (min … max): 0.00% … 97.79%
@@ -90,7 +90,7 @@ Here we will use `@code_warntype`
 ```
 """
 
-# ╔═╡ 7f5cf83a-5215-449b-8ff0-81c51ff194bf
+# ╔═╡ 50b5500e-5ca8-4432-a5ac-01193a808232
 
 
 # ╔═╡ 36a9656e-d09c-46b0-8dc4-b9a4de0ba3a8
@@ -419,7 +419,7 @@ Besides ensuring your function is type stable, there are a number of other perfo
 When using higher-dimensional arrays like matrices, the programmer should remember that Julia uses a `column-major order`. This implies that indexing Julia arrays should be done so that the first index changes the fastest. For example
 
 ```julia
-function row_major_matrix(a::AbstractMatrix)
+function row_major_matrix!(a::AbstractMatrix)
 	for i in axes(a, 1)
 		for j in axes(a, 2)
 			a[i, j] = 2.0
@@ -428,7 +428,13 @@ function row_major_matrix(a::AbstractMatrix)
 	return a
 end
 ```
+!!! note
+	We use the bang symbol !. This is stardard Julia convention and signals that the function is mutating.
+
 """
+
+# ╔═╡ 4f4dde5e-21f3-4042-a91d-cd2c474a2279
+
 
 # ╔═╡ da99dabc-f9e5-4f5e-8724-45ded36270dc
 md"""
@@ -436,14 +442,11 @@ md"""
 	Here we use an function to fill the matrix. This is just for clarity. The more Julian way to do this would be to use the `fill` or `fill!` functions.
 """
 
-# ╔═╡ 4f4dde5e-21f3-4042-a91d-cd2c474a2279
-
-
 # ╔═╡ b3bb4563-e0f6-4edb-bae1-1a91f64b628f
 md"""
 Benchmarking this function gives
 ```julia
-@benchmark row_major_matrix($(zeros(1000, 1000)))
+@benchmark row_major_matrix!($(zeros(1000, 1000)))
 ```
 
 """
@@ -459,7 +462,7 @@ This is very slow! This is because Julia uses column-major ordering. Computers t
 	For a more complete introduction to computere memory and Julia see [https://book.sciml.ai/notes/02-Optimizing_Serial_Code/]()
 
 ```julia
-function column_major_matrix(a::AbstractMatrix)
+function column_major_matrix!(a::AbstractMatrix)
 	for i in axes(a, 1)
 		for j in axes(a, 2)
 			# The j index goes first
@@ -477,7 +480,7 @@ end
 # ╔═╡ 3270cc6e-3b2d-44b3-a75c-fa50cf15b77b
 md"""
 ```julia
-@benchmark column_major_matrix($(zeros(1000, 1000)))
+@benchmark column_major_matrix!($(zeros(1000, 1000)))
 ```
 """
 
@@ -489,7 +492,7 @@ md"""
 To make iterating more automatic, Julia also provides a generic CartesianIndices tool that ensures that the loop is done in the correct order
 
 ```julia
-function cartesian_matrix(a::AbstractMatrix)
+function cartesian_matrix!(a::AbstractMatrix)
 	for I in CartesianIndices(a)
 		a[I] = 2.0
 	end
@@ -504,7 +507,7 @@ end
 # ╔═╡ 6ae76360-c446-4ee7-b452-0ac225e9e41b
 md"""
 ```julia
-@benchmark cartesian_matrix($(zeros(1000, 1000)))
+@benchmark cartesian_matrix!($(zeros(1000, 1000)))
 ```
 """
 
@@ -635,9 +638,6 @@ md"""
 # ╔═╡ db4ceb7c-4ded-4048-88db-fd15b3231a5c
 md"""
 That is starting to look better. Now we can do one more thing. Looking at the results we see that we are still allocating in this loop. We can fix this by explicitly passing the output buffer. 
-
-!!! note
-	We use the bang symbol !. This is stardard Julia convention and signals that the function is mutating.
 """
 
 # ╔═╡ 575d1656-0a0d-40ba-a190-74e36c354e8c
@@ -804,7 +804,7 @@ PyCall = "~1.94.1"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.8.3"
+julia_version = "1.8.4"
 manifest_format = "2.0"
 project_hash = "0ef5d0582d704353803bf3ec48e942b983cdbeae"
 
@@ -886,7 +886,7 @@ version = "4.5.0"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "0.5.2+0"
+version = "1.0.1+0"
 
 [[deps.Conda]]
 deps = ["Downloads", "JSON", "VersionParsing"]
@@ -1254,7 +1254,7 @@ version = "17.4.0+0"
 # ╠═f3d6edf3-f898-4772-80b7-f2aeb0f69216
 # ╠═530368ec-ec33-4204-ac44-9dbabaca0dc4
 # ╟─2310c578-95d8-4af0-a572-d7596750dfcc
-# ╠═7f5cf83a-5215-449b-8ff0-81c51ff194bf
+# ╠═50b5500e-5ca8-4432-a5ac-01193a808232
 # ╟─36a9656e-d09c-46b0-8dc4-b9a4de0ba3a8
 # ╟─8bc401d6-35f0-4722-8ac5-71ca34597b5f
 # ╠═db9108c9-642f-4cb0-b1ba-08a76b505d2e
@@ -1296,8 +1296,8 @@ version = "17.4.0+0"
 # ╟─0898b019-488d-45b3-a8c2-cd72b4491049
 # ╟─a8c622c8-2eaf-4792-94fd-e18d622c3b23
 # ╟─20eff914-5853-4993-85a2-dfb6a8e2c14d
-# ╟─da99dabc-f9e5-4f5e-8724-45ded36270dc
 # ╠═4f4dde5e-21f3-4042-a91d-cd2c474a2279
+# ╟─da99dabc-f9e5-4f5e-8724-45ded36270dc
 # ╟─b3bb4563-e0f6-4edb-bae1-1a91f64b628f
 # ╠═0d80a856-131d-4811-8d14-828c8c5e49dc
 # ╟─1194df52-bd14-4d6b-9e99-d87c131156d6
