@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.18
+# v0.19.19
 
 using Markdown
 using InteractiveUtils
@@ -20,7 +20,7 @@ Preprocessor "macro" systems, like that of C/C++, work at the source code level 
     begin
     str1 = "3 * 4 + 5"
     ex1 = Meta.parse(str1)
-    typeof(ex1)
+    println(typeof(ex1))
     end
 
 Try it.
@@ -49,7 +49,8 @@ Note that the expression `ex1` can be written directly in AST syntax.
 
     begin
     ex2 = Expr(:call, :+, Expr(:call, :*, 3, 4), 5)
-    ex1 == ex2
+    dump(ex2)
+    println(ex1 == ex2)
 	end
 
 Try it.
@@ -60,6 +61,12 @@ Try it.
 
 # ╔═╡ 3f2aef09-55c0-40c3-a50d-7081e66c60ed
 md"""
+
+!!! note
+    If you prefer writing code as an AST, you can do so in Julia.
+
+    However, you may not be popular with other coders.
+
 ### The `:` character
 
 The `:` character has two syntatic purposes in Julia. It signifies a `Symbol` or a `Quote`.
@@ -70,8 +77,8 @@ A `Symbol` is an interned string used as a building-block of an expression.
 
     begin
     sym = :foo
-    typeof(sym)
-    sym == Symbol("foo")
+    println(typeof(sym))
+    println(sym == Symbol("foo"))
     end
 
 Try it.
@@ -89,7 +96,7 @@ The `Symbol` constructor takes a variable number of arguments and concatenates t
 Try this.
 """
 
-# ╔═╡ d7ef1705-4fb0-4adf-b678-c993d9192899
+# ╔═╡ 8863cbcc-4ff6-4714-b7d8-c39373af384e
 
 
 # ╔═╡ 90538e89-e592-4536-99cb-7378ec320b8d
@@ -102,7 +109,8 @@ The second purpose of the `:` character is to create expression objects without 
 
     begin
     ex3 = :(3 * 4 + 5)
-    ex1 == ex2 == ex3
+    dump(ex3)
+    println(ex1 == ex2 == ex3)
     end
 
 Try this example.
@@ -125,7 +133,7 @@ Try the following example.
         y = 2
         x + y
     end
-    typeof(ex4)
+    println(typeof(ex4))
     end
 """
 
@@ -141,6 +149,7 @@ Julia allows *interpolation* of literals or expressions into quoted expressions 
     begin
     a = 1;
     ex5 = :($a + b)
+    dump(ex5)
     end
 
 Try it.
@@ -155,7 +164,7 @@ Splatting is also possible.
 
     begin
     args = [:x, :y, :x];
-    :(f(1, $(args...)))
+    dump(:(f(1, $(args...))))
     end
 
 And this too.
@@ -170,7 +179,7 @@ md"""
 
 Julia will evalution an expression in the global scope using `eval`.
 
-    eval(ex1)
+    println(eval(ex1))
 """
 
 # ╔═╡ ade3dfbb-23bb-4ca6-8a33-3ec16dbed523
@@ -238,10 +247,14 @@ Consider the following example.
 md"""
 We want to add a various methods to it. This can be done programmatically using a loop.
 
+    begin
+    println(length(methods(sin)))
     for op = (:sin, :tan, :log, :exp)
         eval(quote
             Base.$op(a::MyNumber) = MyNumber($op(a.x))
         end)
+    end
+    println(length(methods(sin)))
     end
 
 Try this example.
@@ -318,7 +331,7 @@ Generated functions differ from regular functions in five ways. They:
 2. can only access the types of the arguments, not their values.
 3. are nonexecuting. They return a quoted expression, not a value.
 4. can only call previously defined functions. (Otherwise, `MethodErrors` may result.)
-5. must not *mutate* or *observe* any non-constant global state. They can only read global constants, and cannot have side effects. In other words, they must be complete pure.
+5. must not *mutate* or *observe* any non-constant global state. They can only read global constants, and cannot have side effects. In other words, they must be completely pure.
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -590,7 +603,7 @@ version = "17.4.0+0"
 # ╟─3f2aef09-55c0-40c3-a50d-7081e66c60ed
 # ╠═bc5709bd-8c44-4d58-82cc-e14eef20cfe6
 # ╟─c1e446d9-63e9-4b9d-a0da-c1321c7f0a38
-# ╠═d7ef1705-4fb0-4adf-b678-c993d9192899
+# ╠═8863cbcc-4ff6-4714-b7d8-c39373af384e
 # ╟─90538e89-e592-4536-99cb-7378ec320b8d
 # ╠═611e0640-dc39-4846-89c9-172bc001e994
 # ╟─e7934544-0344-48d3-8046-c3796874e5b3
