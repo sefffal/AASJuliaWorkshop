@@ -1,14 +1,11 @@
 ### A Pluto.jl notebook ###
-# v0.19.19
+# v0.19.17
 
 using Markdown
 using InteractiveUtils
 
 # ╔═╡ cfebe185-8871-4fe5-ac55-20c7803a0457
 using PlutoUI; TableOfContents()
-
-# ╔═╡ 9d08cba7-90e1-4fe0-842b-757d3df36a32
-using UUIDs
 
 # ╔═╡ 2b2adba9-fc0d-4f59-95a5-8d14d1c067f4
 md"""
@@ -35,10 +32,7 @@ Try making a small module with a couple of variables and functions in the next P
 """
 
 # ╔═╡ 49bac5a6-51ee-4150-bb4f-3934bd8e4fb2
-module MyModA
-	y = 1
-	f(x) = 2x^2
-end
+
 
 # ╔═╡ 56a7b4fe-970b-480a-bfaa-f703a17ade8c
 md"""
@@ -51,7 +45,7 @@ Try running the function you defined inside your module:
 """
 
 # ╔═╡ 45695b6c-4f80-4eb7-8292-daf946ae494a
-MyModA.f(2)
+
 
 # ╔═╡ 3c3f1920-1c73-4744-a88c-9510e6bf4299
 md"""
@@ -111,26 +105,6 @@ module BobsGeometryExtras
 	function Geometry.distance_from_origin(point::Point3D)
 		return sqrt(point.x^2 + point.y^2 + point.x^2)
 	end
-
-	# Remove the following from cell before workshop
-	using LinearAlgebra
-
-	function Base.abs(point::Point3D)
-		return Point3D(abs(point.x), abs(point.y), abs(point.z))
-	end
-
-	function Base.:(+)(a::Point3D, b::Point3D)
-		return Point3D(a.x + b.x, a.y + b.y, a.z + b.z)
-	end
-
-	# Define Point3D multiplication as the cross product
-	function Base.:(*)(a::Point3D, b::Point3D)
-		return Point3D(
-			a.z*b.z - a.z*b.y,
-			a.z*b.x - a.x*b.z,
-            a.x*b.y - a.y*b.x
-		)
-	end
 	
 end
 
@@ -141,10 +115,10 @@ Try creating a `Point2D` and using the distance function:
 """
 
 # ╔═╡ 0177630e-be79-4a84-bc7f-2c44bf260052
-p2d = Geometry.Point2D(2,3)
+
 
 # ╔═╡ 1fd083b6-3a6d-4b96-8bbb-c4a2a108bff8
-Geometry.distance_from_origin(p2d)
+
 
 # ╔═╡ 96db8904-78e2-4caa-8e65-d01501df9b15
 md"""
@@ -164,10 +138,10 @@ Try using the `distance_from_origin` function with a `Point3D`:
 """
 
 # ╔═╡ 307b6e57-28a2-4b0f-a512-76985925bc17
-p3d = BobsGeometryExtras.Point3D(1,2,3)
+
 
 # ╔═╡ ef7c4547-552c-4487-91d8-4152cd60beb2
-Geometry.distance_from_origin(p3d)
+
 
 # ╔═╡ 47213373-9623-4edd-bfa8-9db62ff2eaba
 md"""
@@ -209,13 +183,7 @@ p4 = p1 * p2
 """
 
 # ╔═╡ 736dce7f-cc86-4dd8-ab5a-e05410689f7f
-begin
-p1 = BobsGeometryExtras.Point3D(1,1,1)
-p2 = BobsGeometryExtras.Point3D(1,-1,1)
-p3 = p1 + p2
 
-p4 = p1 * p2
-end
 
 # ╔═╡ 93d3f0fc-030e-4600-8773-a68631dd5207
 md"""
@@ -226,25 +194,19 @@ Since we've defined the `+` function on the Point2D type, lots of new behaviour 
 """
 
 # ╔═╡ dafceedf-5825-44a6-87f6-bb48e443ccb2
-l1 = [p1,p2,p3]
+
 
 # ╔═╡ b4209638-ad3a-48ef-8323-883aaaf10a50
-sum(l1)
+
 
 # ╔═╡ 4edef180-aa31-4e27-be61-e9d3a1d7b4a1
-M1 = [
-	p1 p2
-	p3 p4
-]
+
 
 # ╔═╡ 8d877a0b-4a47-410f-818c-4a2e24ba4727
-M2 = [
-	p4 p3
-	p3 p4
-]
+
 
 # ╔═╡ aac4a5ac-6492-4af5-898b-0e7e9eec2be0
-M1 * M2
+
 
 # ╔═╡ 454ff2f3-fbe0-4125-a435-ef44b175c35d
 md"""
@@ -401,8 +363,11 @@ uuid4()
 Try it now:
 """
 
+# ╔═╡ 9d08cba7-90e1-4fe0-842b-757d3df36a32
+
+
 # ╔═╡ a413ec8f-0787-4d77-a04c-acffdf305b7a
-uuid4()
+
 
 # ╔═╡ 9238dcf9-3722-45a1-ad4b-af2a39d24626
 md"""
@@ -476,10 +441,9 @@ The easiest way to share a Julia package is to put it on GitHub.
 
 Once you're happy with your package, you can "register" it with the Julia General Registry so that people can install it by just typing `] add MyPackage`.
 
-### Extras
 There are lots more things you can add to your package over time.
 
-#### Tests
+### Tests
 You can add tests in a file called `tests/runtests.jl`. Then, you can run `] test MyPackage` to get a test report.
 
 If your package is registered, the Julia developers will run your package tests against new versions of Julia to make sure everything works as expected.
@@ -487,7 +451,7 @@ If your package is registered, the Julia developers will run your package tests 
 You can even hook up these tests to GitHub so that they run everytime you change the code. This is a great way to make sure everything stays working the way it should!
 
 
-#### Documentation
+### Documentation
 You can add documentation to your package in the `docs` folder. 
 Read about how here: [documenter.juliadocs.org](https://documenter.juliadocs.org/stable/). You can set GitHub up to automatically convert your docs into a hosted webpage.
 """
@@ -544,11 +508,7 @@ for f in [
     :(Base.transpose),
     :(Base.view),
 ]
-    
-    expr = :(
-		($f)(arr::MetaArray, args...) = MetaArray($f(arr.array, args...), arr.meta)
-	)
-	eval(expr)
+    @eval ($f)(arr::MetaArray, args...) = MetaArray($f(arr.array, args...), arr.meta)
 end
 
 # ╔═╡ 8df360a9-df72-4da8-82a4-7f09b347c7cb
@@ -559,10 +519,6 @@ We loop over the variable names Base.getindex, Base.setindex!, etc.
 Inside the loop body, we create a quoted expression where some function \$f is defined against a MetaArray.
 Then, we evaluate that expression, replacing \$f with the function in question. 
 
-A simpler syntax for the same operation would be:
-```julia
-@eval ($f)(arr::MetaArray, args...) = MetaArray($f(arr.array, args...), arr.meta)
-```
 """
 
 # ╔═╡ f7cb6ead-8799-47f9-a553-d570581e4b56
@@ -582,9 +538,7 @@ v = view(arr, 1:2, 1:2)
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
-LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
 [compat]
 PlutoUI = "~0.7.49"
@@ -594,9 +548,9 @@ PlutoUI = "~0.7.49"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.0-DEV"
+julia_version = "1.8.3"
 manifest_format = "2.0"
-project_hash = "d2b0d0be240b7cb45b4a98a4b5d7097593558a4e"
+project_hash = "08cc58b1fbde73292d848136b97991797e6c5429"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -623,7 +577,7 @@ version = "0.11.4"
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "1.0.2+0"
+version = "0.5.2+0"
 
 [[deps.Dates]]
 deps = ["Printf"]
@@ -694,7 +648,7 @@ version = "1.10.2+0"
 uuid = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 
 [[deps.LinearAlgebra]]
-deps = ["Libdl", "OpenBLAS_jll", "libblastrampoline_jll"]
+deps = ["Libdl", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[deps.Logging]]
@@ -719,7 +673,7 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[deps.MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
-version = "2022.10.11"
+version = "2022.2.1"
 
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
@@ -728,7 +682,7 @@ version = "1.2.0"
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
-version = "0.3.21+0"
+version = "0.3.20+0"
 
 [[deps.Parsers]]
 deps = ["Dates", "SnoopPrecompile"]
@@ -737,7 +691,7 @@ uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
 version = "2.5.2"
 
 [[deps.Pkg]]
-deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
+deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 version = "1.8.0"
 
@@ -780,28 +734,22 @@ version = "1.0.1"
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
 
 [[deps.SparseArrays]]
-deps = ["Libdl", "LinearAlgebra", "Random", "Serialization", "SuiteSparse_jll"]
+deps = ["LinearAlgebra", "Random"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [[deps.Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
-version = "1.9.0"
-
-[[deps.SuiteSparse_jll]]
-deps = ["Artifacts", "Libdl", "Pkg", "libblastrampoline_jll"]
-uuid = "bea87d4a-7f5b-5778-9afe-8cc45184846c"
-version = "5.10.1+0"
 
 [[deps.TOML]]
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
-version = "1.0.3"
+version = "1.0.0"
 
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
 uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
-version = "1.10.0"
+version = "1.10.1"
 
 [[deps.Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
@@ -827,12 +775,12 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 [[deps.Zlib_jll]]
 deps = ["Libdl"]
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
-version = "1.2.13+0"
+version = "1.2.12+3"
 
 [[deps.libblastrampoline_jll]]
-deps = ["Artifacts", "Libdl"]
+deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
-version = "5.2.0+0"
+version = "5.1.1+0"
 
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -864,7 +812,7 @@ version = "17.4.0+0"
 # ╟─c7ccc1ff-9784-4cb1-a2cf-89a21d2c4ec3
 # ╠═307b6e57-28a2-4b0f-a512-76985925bc17
 # ╠═ef7c4547-552c-4487-91d8-4152cd60beb2
-# ╠═47213373-9623-4edd-bfa8-9db62ff2eaba
+# ╟─47213373-9623-4edd-bfa8-9db62ff2eaba
 # ╠═736dce7f-cc86-4dd8-ab5a-e05410689f7f
 # ╟─93d3f0fc-030e-4600-8773-a68631dd5207
 # ╠═dafceedf-5825-44a6-87f6-bb48e443ccb2
