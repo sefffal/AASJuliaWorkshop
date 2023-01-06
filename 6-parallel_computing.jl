@@ -616,11 +616,10 @@ To get started with GPUs in Julia you need to load the correct package one of
 3. [oneAPI.jl](https://github.com/JuliaGPU/oneAPI.jl): Intel GPUs, currently under active development so it may have bugs; only works on linux currently.
 4. [Metal.jl](https://github.com/JuliaGPU/Metal.jl): Mac GPUs. Work in progress. Expect bugs and it is open to pull-requests.
 
-For this tutorial I will be using the CUDA library. If your computer doesn't have a CUDA GPU
-then the examples below will not work.
+For this tutorial I will be using mostly be using the CUDA library. However, we will try to include code for other GPUs as well.
 
 
-### Getting Started with CUDA.jl
+### Getting Started with GPU computing
 
 CUDA.jl provides a complete suite of GPU tools in Julia from low-level kernel writing to
 high-level array operations. Most of the time a user just needs to use the high-level array
@@ -628,26 +627,56 @@ interface which uses Julia's built-in broadcasting. For instance we can port our
 addition example above to the GPU by first moving the data to the GPU and using Julia's CUDA.jl broadcast interface.
 """
 
+# ╔═╡ 9d9d3fff-37d8-4773-816f-411fb79679f5
+md"""
+```julia
+# For AMD
+using AMDGPU
+# For intel (linux only)
+using oneAPI
+# For M1 Mac
+using Metal
+```
+"""
+
+# ╔═╡ 799de936-6c6d-402f-93db-771e7ec1ef51
+md"""
+Now let's load our array onto the GPU
+
+For CUDA:
+```julia
+begin
+	xlarge_gpu   = cu(xlarge)
+	ylarge_gpu   = cu(ylarge)
+	outlarge_gpu = cu(outlarge)
+end
+```
+
+For other GPU providers replace `cu` with 
+```julia
+# AMD
+ROCArray(xlarge)
+# Intel
+oneArray(xlarge)
+# M1 Mac
+MtlArray(xlarge)
+```
+"""
+
 # ╔═╡ 5215d6a5-5823-4d3b-9086-ebd975d4393b
-xlarge_gpu = cu(xlarge)
 
-# ╔═╡ 63b3c6bb-32e8-4907-9dcb-11c951c16aaf
-ylarge_gpu = cu(ylarge)
-
-# ╔═╡ fb8023f9-9d13-4cd4-bb53-2a462573cf35
-outlarge_gpu = cu(outlarge)
 
 # ╔═╡ 0116005e-c436-4dad-89bd-47260cfa706f
 md"""
 For CUDA.jl the `cu` function take an array and creates a `CuArray` which is a copy of the
-array that lives in the GPU memory. Below we will mention some of the potential performance
+array that lives in the GPU memory. For the other GPUs the story is very similar and just the array type changes. Below we will mention some potential performance
 pitfalls that can occur due to this memory movement.
 
-`cu` will tend to work on a large number of Array types in Julia. However, if your have a
+`cu` will tend to work on many Array types in Julia. However, if you have a
 more complicated variable such as a `struct` then you will need to tell Julia how to move
 the data to the GPU. To see how to do this see <https://cuda.juliagpu.org/stable/tutorials/custom_structs/>
 
-Given these `CuArray` objects, our `serial_add!` function could be written as
+Given these GPU array objects, our `serial_add!` function could be written as
 """
 
 # ╔═╡ 0218d82e-35b4-4109-bbc8-b1d51c97ab6f
@@ -675,6 +704,9 @@ Running this on the gpu is then as simple as
 ```julia
 @benchmark bcast_add!($outlarge_gpu, $xlarge_gpu, $ylarge_gpu)
 ```
+
+!!! note 
+	This will work with any of the GPU packages mentioned above!
 """
 
 # ╔═╡ 6b34f668-25d1-4c9b-8c1a-d08fcdc5dea0
@@ -727,7 +759,7 @@ md"""
 
 While Julia's array base GPU programming is extremely powerful, sometimes we have to use
 something more low-level. For instance, suppose our function accesses specific elements of
-a `CuArray` that isn't handled through the usual linear algebra of broadcast interface.
+a GPU array (e.g., CuArray) that isn't handled through the usual linear algebra of broadcast interface.
 
 In this case when we try to index into a `CuArray` we get a `Scalar Indexing` error
 """
@@ -744,19 +776,20 @@ xlarge_gpu[1]
 
 # ╔═╡ e4ca8a18-1bc9-4730-95ae-d2a1edc30114
 md"""
-Analyzing the error message tell us what is happening. When accessing a single element,
+Analyzing the error message tells us what is happening. When accessing a single element,
 the CuArray will first copy the entire array to the CPU and then access the element.
 This is incredibly slow! So how to we deal with this?
 
 The first approach is to see if you can rewrite the function so that you can make use of
-`CUDA.jl` broadcasting interface. If this is not possible then you will need to write a custom kernel.
+the GPU broadcasting interface. If this is impossible, you will need to write a custom kernel.
 
-To do this let's adapt our simple example to demonstrate the general approach to writing
-CUDA kernels
+To do this, let's adapt our simple example to demonstrate the general approach to writing CUDA kernels
 """
 
 # ╔═╡ bebb0e97-cfb3-46ac-80aa-2ada3159e4f5
 md"""
+
+For CUDA and AMD
 ```julia
 function gpu_kernel_all!(out, x, y)
     index = (blockIdx().x - 1) * blockDim().x + threadIdx().x
@@ -764,6 +797,15 @@ function gpu_kernel_all!(out, x, y)
 	for i in index:stride:length(out)
 		out[i] = x[i] + y[i]
 	end
+	return nothing
+end
+```
+
+For Mac
+```julia
+function gpu_kernel_all!(out, x, y)
+	i = thread_position_in_grid_1d()
+	out[i] = x[i] + y[i]
 	return nothing
 end
 ```
@@ -785,6 +827,19 @@ CUDA.@sync @cuda threads=256 gpu_kernel_all!(outlarge_gpu, xlarge_gpu, ylarge_gp
 ```
 """
 
+# ╔═╡ e1964067-d3e7-4903-a17d-0606a6bc281e
+md"""
+For AMD we use the `@roc` macro
+```julia
+wait(@roc groupsize=256 gpu_kernel_all!(outlarge_gpu, xlarge_gpu, ylarge_gpu))
+```
+
+For M1 Mac we use the `@metal` macro
+```julia
+@metal threads=length(outlarge) gpu_kernel_all!(outlarge_gpu, xlarge_gpu, ylarge_gpu)
+```
+"""
+
 # ╔═╡ d895744d-888d-45ff-a7e5-8865be535194
 
 
@@ -796,9 +851,7 @@ md"""
 
 # ╔═╡ c6436555-0cb9-4738-af64-8d3fbd1c07c0
 md"""
-`@cuda` will launch our custom kernel on the GPU asynchronously. The `CUDA.@sync` then causes Julia to wait until the kernel is finished running.
-
-Finally to get our result from the GPU we then just use the `Array` constructor
+Finally, to get our result from the GPU we then just use the `Array` constructor
 ```julia
 Array(outlarge_gpu)
 ```
@@ -846,6 +899,9 @@ md"""
 ```julia
 @benchmark cu($xlarge)
 ```
+
+!!! tip
+	Replace `cu` with the correct GPU array call for your specific provider
 """
 
 # ╔═╡ 3522798d-7e38-4db6-91b6-474e5d8d9119
@@ -1911,10 +1967,10 @@ version = "17.4.0+0"
 # ╠═4f23d7c3-6d85-4d03-8d05-dd0719ebcbe3
 # ╟─529f73c3-b8ba-4b4b-bab1-7aa84c2a3a29
 # ╟─e7163af8-3534-44fc-8e8f-ef1c692c972e
+# ╟─9d9d3fff-37d8-4773-816f-411fb79679f5
 # ╠═72cd207c-7a63-4e29-a6d8-110bcf65ecdc
+# ╟─799de936-6c6d-402f-93db-771e7ec1ef51
 # ╠═5215d6a5-5823-4d3b-9086-ebd975d4393b
-# ╠═63b3c6bb-32e8-4907-9dcb-11c951c16aaf
-# ╠═fb8023f9-9d13-4cd4-bb53-2a462573cf35
 # ╟─0116005e-c436-4dad-89bd-47260cfa706f
 # ╟─0218d82e-35b4-4109-bbc8-b1d51c97ab6f
 # ╠═d7fdf09a-3c59-4dba-b089-ae6033b57809
@@ -1936,6 +1992,7 @@ version = "17.4.0+0"
 # ╠═759be8ef-7136-4330-abfe-0ffd212883d3
 # ╟─6b40113f-5017-4530-9d76-fadeab58973c
 # ╟─a5688604-240e-4d5d-8252-672fc789cd05
+# ╟─e1964067-d3e7-4903-a17d-0606a6bc281e
 # ╠═d895744d-888d-45ff-a7e5-8865be535194
 # ╟─8ff25eb9-a32f-410f-a430-d123c2f3c884
 # ╟─c6436555-0cb9-4738-af64-8d3fbd1c07c0
